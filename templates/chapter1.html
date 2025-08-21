@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Histology Chapter -->
+<div class="chapter-page" id="histology">
+    <div class="chapter-header">
+        <div class="chapter-number">Chapter 1</div>
+        <h2 class="chapter-main-title">🧪 Histology - Study of Tissues</h2>
+        <p class="chapter-description">Microscopic examination of tissue structure and function</p>
+    </div>
+
+    <!-- Filter controls -->
+    <div class="filter-controls">
+        <button class="filter-btn active" data-filter="all">All Slides</button>
+        <button class="filter-btn" data-filter="connective">Connective Tissue</button>
+        <button class="filter-btn" data-filter="epithelial">Epithelial Tissue</button>
+        <button class="filter-btn" data-filter="glandular">Glandular Tissue</button>
+    </div>
+
+    <div class="slide-grid">
+        <!-- Slide 1: Areolar Connective Tissue -->
+        <div class="slide-card" data-category="connective">
+            <div class="slide-header">
+                <div class="slide-number">Slide 1</div>
+            </div>
+            <div class="image-wrapper">
+                <img src="{{ url_for('static', filename='images/areolar.jpg') }}" alt="Areolar Connective Tissue" class="slide-image" />
+            </div>
+            <div class="slide-content">
+                <div class="slide-title">Areolar Connective Tissue</div>
+                <div class="components-list">
+                    <div class="components-title">Components:</div>
+                    <div class="component-item">Fibroblasts</div>
+                    <div class="component-item">Collagen fibers</div>
+                    <div class="component-item">Elastic fibers</div>
+                    <div class="component-item">Ground substance</div>
+                    <div class="component-item">Macrophages</div>
+                    <div class="component-item">Mast cells</div>
+                    <div class="component-item">Plasma cells</div>
+                </div>
+                <div class="location-section">
+                    <div class="section-title">📍 Location:</div>
+                    <div class="content-text">Under epithelial layers, around blood vessels, nerves, and lymphatics, between muscles and organs</div>
+                </div>
+                <div class="function-section">
+                    <div class="section-title">⚙️ Functions:</div>
+                    <ul class="function-list">
+                        <li>Binding and Support</li>
+                        <li>Cushioning and Protection</li>
+                        <li>Nutrient Diffusion</li>
+                        <li>Defense Mechanism</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Adipose Tissue -->
+        <div class="slide-card" data-category="connective">
+            <div class="slide-header">
+                <div class="slide-number">Slide 2</div>
+            </div>
+            <div class="image-wrapper">
+                <img src="{{ url_for('static', filename='images/adipose_tissue.jpg') }}" alt="Adipose Tissue" class="slide-image" />
+            </div>
+            <div class="slide-content">
+                <div class="slide-title">Adipose Tissue</div>
+                <div class="components-list">
+                    <div class="components-title">Components:</div>
+                    <div class="component-item">Adipocytes (fat cells)</div>
+                    <div class="component-item">Large, round cells</div>
+                    <div class="component-item">Central lipid droplet</div>
+                    <div class="component-item">Peripheral nucleus</div>
+                    <div class="component-item">Sparse connective tissue fibers</div>
+                    <div class="component-item">Capillaries</div>
+                </div>
+                <div class="location-section">
+                    <div class="section-title">📍 Location:</div>
+                    <div class="content-text">Beneath the skin (subcutaneous layer), around internal organs (visceral fat), between muscle layers</div>
+                </div>
+                <div class="function-section">
+                    <div class="section-title">⚙️ Functions:</div>
+                    <ul class="function-list">
+                        <li>Energy storage</li>
+                        <li>Thermal insulation</li>
+                        <li>Mechanical cushioning</li>
+                        <li>Endocrine function</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slides 3-20: Similar structure with adjusted image paths and alt texts -->
+        <!-- Each slide follows the same pattern with unique content -->
+        <!-- Example for Slide 3 -->
+        <div class="slide-card" data-category="connective">
+            <div class="slide-header">
+                <div class="slide-number">Slide 3</div>
+            </div>
+            <div class="image-wrapper">
+                <img src="{{ url_for('static', filename='images/Reticular Tissue.jpg') }}" alt="Reticular Tissue" class="slide-image" />
+            </div>
+            <div class="slide-content">
+                <div class="slide-title">Reticular Tissue</div>
+                <div class="components-list">
+                    <div class="components-title">Components:</div>
+                    <div class="component-item">Reticular fibers</div>
+                    <div class="component-item">Reticular cells (specialized fibroblasts)</div>
+                    <div class="component-item">Supporting cells</div>
+                </div>
+                <div class="location-section">
+                    <div class="section-title">📍 Location:</div>
+                    <div class="content-text">Lymph nodes, spleen, bone marrow, liver, thymus</div>
+                </div>
+                <div class="function-section">
+                    <div class="section-title">⚙️ Functions:</div>
+                    <ul class="function-list">
+                        <li>Forms soft internal framework (stroma)</li>
+                        <li>Supports cells in lymphatic organs</li>
+                        <li>Filters body fluids</li>
+                        <li>Provides structural integrity</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slides 4-20 would continue here with the same structure -->
+        <!-- Each with unique content and corrected image paths -->
+    </div>
+</div>
+{% endblock %}

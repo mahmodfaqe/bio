@@ -1,18 +1,33 @@
-from flask import Flask, render_template, request, url_for, redirect, flash, jsonify
+from flask import Flask, render_template, request, url_for, redirect, flash, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
 import os
+import uuid
+from PIL import Image
 from flask_migrate import Migrate
-from flask import Flask, render_template, request, url_for, redirect, flash, jsonify
 
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///biology_system.db'
 app.config['SECRET_KEY'] = 'your-secret-key-change-this-in-production'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# File upload configuration
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# Create upload directory if it doesn't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'slides'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'thumbnails'), exist_ok=True)
 
 # Initialize extensions
 db = SQLAlchemy(app)
@@ -112,7 +127,21 @@ I18N = {
         "success_added": "Successfully added",
         "success_updated": "Successfully updated",
         "success_deleted": "Successfully deleted",
-        "error_occurred": "An error occurred"
+        "error_occurred": "An error occurred",
+
+        # New image upload strings
+        "upload_image": "Upload Image",
+        "select_image": "Select Image File",
+        "or": "or",
+        "provide_url": "Provide Image URL",
+        "image_preview": "Image Preview",
+        "remove_image": "Remove Image",
+        "uploading": "Uploading...",
+        "upload_success": "Image uploaded successfully",
+        "upload_error": "Error uploading image",
+        "invalid_file_type": "Invalid file type. Please select PNG, JPG, JPEG, GIF, or WEBP files.",
+        "file_too_large": "File too large. Maximum size is 5MB.",
+        "compress_and_upload": "Compress & Upload",
     },
     "ckb": {
         "site_title": "ڕێبەری خوێندنی بایۆلۆجی",
@@ -134,7 +163,7 @@ I18N = {
         "chapters_intro": "داپۆشینی بەرفراوان بۆ بابەتە گرنگەکانی بایۆلۆجی.",
         "back_home": "← گەڕانەوە بۆ سەرەکی",
         "current_chapter_title": "ڕێبەری تەکنەلۆجی بایۆلۆجی",
-        "current_cha-pter_subtitle": "کەرەستەی خوێندنی بەرفراوان بۆ خوێندکارانی بایۆلۆجی",
+        "current_chapter_subtitle": "کەرەستەی خوێندنی بەرفراوان بۆ خوێندکارانی بایۆلۆجی",
         "all_chapters": "هەموو بابەتەکانی خوێندن",
         "chapter": "بابەت",
         "view_chapter": "خوێندنی بابەت",
@@ -203,8 +232,22 @@ I18N = {
         "success_added": "بە سەرکەوتووی زیادکرا",
         "success_updated": "بە سەرکەوتووی نوێکرایەوە",
         "success_deleted": "بە سەرکەوتووی سڕایەوە",
-        "error_occurred": "هەڵەیەک ڕوویدا"
-    },
+        "error_occurred": "هەڵەیەک ڕوویدا",
+
+        # New image upload strings
+        "upload_image": "ئەپلۆدکردنی وێنە",
+        "select_image": "وێنەیەک هەڵبژێرە",
+        "or": "یان",
+        "provide_url": "بەستەری وێنە بدە",
+        "image_preview": "پێشبینینی وێنە",
+        "remove_image": "لابردنی وێنە",
+        "uploading": "ئەپلۆد دەکرێت...",
+        "upload_success": "وێنە بە سەرکەوتوویی ئەپلۆد کرا",
+        "upload_error": "هەڵە لە ئەپلۆدکردنی وێنە",
+        "invalid_file_type": "جۆری فایل نادرووست. تکایە PNG, JPG, JPEG, GIF, یان WEBP فایل هەڵبژێرە.",
+        "file_too_large": "فایل زۆر گەورەیە. ئەوپەڕی قەبارە 5MB یە.",
+        "compress_and_upload": "پچڕاندن و ئەپلۆد",
+    }
 }
 
 
@@ -236,6 +279,7 @@ class User(UserMixin, db.Model):
     @property
     def is_admin(self):
         return self.role in ['super_admin', 'chapter_admin']
+
 
 class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -271,6 +315,8 @@ class Slide(db.Model):
     content_en = db.Column(db.Text)
     content_ckb = db.Column(db.Text)
     image_url = db.Column(db.String(500))
+    image_filename = db.Column(db.String(255))  # New field for uploaded images
+    thumbnail_filename = db.Column(db.String(255))  # New field for thumbnails
     order = db.Column(db.Integer, default=1)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
     components = db.Column(db.Text)
@@ -287,6 +333,18 @@ class Slide(db.Model):
     def get_content(self, lang='en'):
         return self.content_ckb if lang == 'ckb' else self.content_en
 
+    def get_image_url(self):
+        """Get the image URL, prioritizing uploaded image over external URL"""
+        if self.image_filename:
+            return url_for('uploaded_file', filename=f'slides/{self.image_filename}')
+        return self.image_url
+
+    def get_thumbnail_url(self):
+        """Get thumbnail URL if available"""
+        if self.thumbnail_filename:
+            return url_for('uploaded_file', filename=f'thumbnails/{self.thumbnail_filename}')
+        return self.get_image_url()
+
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -299,6 +357,7 @@ class Activity(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='activities')
+
 
 class SystemStats(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -828,7 +887,7 @@ def manage_slides(lang, chapter_id):
 @app.route('/<lang>/admin/slide/add', methods=['GET', 'POST'])
 @admin_required
 def add_slide(lang):
-    """Add new slide - data saved to database"""
+    """Add new slide with image upload support"""
     lang, t, lang_code = pick_lang(lang)
 
     if request.method == 'POST':
@@ -847,6 +906,8 @@ def add_slide(lang):
             order=max_order + 1,
             chapter_id=chapter_id,
             image_url=request.form.get('image_url', ''),
+            image_filename=request.form.get('image_filename', ''),
+            thumbnail_filename=request.form.get('thumbnail_filename', ''),
             components=request.form.get('components', ''),
             location=request.form.get('location', ''),
             functions=request.form.get('functions', '')
@@ -881,7 +942,7 @@ def add_slide(lang):
 @app.route('/<lang>/admin/slide/<int:slide_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_slide(lang, slide_id):
-    """Edit slide - data from/to database"""
+    """Edit slide with image upload support"""
     lang, t, lang_code = pick_lang(lang)
     slide = Slide.query.get_or_404(slide_id)
 
@@ -890,12 +951,42 @@ def edit_slide(lang, slide_id):
         return redirect(url_for('admin_dashboard', lang=lang))
 
     if request.method == 'POST':
+        # Handle old image cleanup if new image is uploaded
+        old_image_filename = slide.image_filename
+        old_thumbnail_filename = slide.thumbnail_filename
+
         slide.title_en = request.form.get('title_en', '')
         slide.title_ckb = request.form.get('title_ckb', '')
         slide.content_en = request.form.get('content_en', '')
         slide.content_ckb = request.form.get('content_ckb', '')
         slide.order = int(request.form.get('order', slide.order))
         slide.image_url = request.form.get('image_url', '')
+
+        # Handle uploaded image
+        new_image_filename = request.form.get('image_filename', '')
+        new_thumbnail_filename = request.form.get('thumbnail_filename', '')
+
+        if new_image_filename and new_image_filename != old_image_filename:
+            slide.image_filename = new_image_filename
+            slide.thumbnail_filename = new_thumbnail_filename
+
+            # Clean up old files
+            if old_image_filename:
+                try:
+                    old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'slides', old_image_filename)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+                except:
+                    pass
+
+            if old_thumbnail_filename:
+                try:
+                    old_thumb_path = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails', old_thumbnail_filename)
+                    if os.path.exists(old_thumb_path):
+                        os.remove(old_thumb_path)
+                except:
+                    pass
+
         slide.components = request.form.get('components', '')
         slide.location = request.form.get('location', '')
         slide.functions = request.form.get('functions', '')
@@ -1061,6 +1152,192 @@ def before_request():
             db.create_all()
             create_sample_data()
             app.db_initialized = True
+
+
+# File upload helper functions
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def generate_unique_filename(filename):
+    """Generate unique filename using UUID"""
+    ext = filename.rsplit('.', 1)[1].lower()
+    return f"{uuid.uuid4().hex}.{ext}"
+
+
+def create_thumbnail(image_path, thumbnail_path, size=(300, 300)):
+    """Create thumbnail for uploaded image"""
+    try:
+        with Image.open(image_path) as img:
+            # Convert RGBA to RGB if necessary
+            if img.mode in ('RGBA', 'LA'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'RGBA':
+                    background.paste(img, mask=img.split()[-1])
+                else:
+                    background.paste(img, mask=img.split()[-1])
+                img = background
+
+            # Create thumbnail maintaining aspect ratio
+            img.thumbnail(size, Image.Resampling.LANCZOS)
+            img.save(thumbnail_path, 'JPEG', quality=85, optimize=True)
+            return True
+    except Exception as e:
+        print(f"Error creating thumbnail: {e}")
+        return False
+
+
+def compress_image(image_path, max_size=(1920, 1080), quality=85):
+    """Compress image to reduce file size"""
+    try:
+        with Image.open(image_path) as img:
+            # Convert RGBA to RGB if necessary
+            if img.mode in ('RGBA', 'LA'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'RGBA':
+                    background.paste(img, mask=img.split()[-1])
+                else:
+                    background.paste(img, mask=img.split()[-1])
+                img = background
+
+            # Resize if image is too large
+            if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+            # Save with compression
+            img.save(image_path, 'JPEG', quality=quality, optimize=True)
+            return True
+    except Exception as e:
+        print(f"Error compressing image: {e}")
+        return False
+
+
+
+# [Include all existing decorators and helper functions]
+def super_admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash("You must be logged in to access this page.", "warning")
+            return redirect(url_for("admin_login", lang=kwargs.get('lang', 'en')))
+        if not current_user.is_super_admin:
+            flash("Only super admins can access this page.", "danger")
+            return redirect(url_for("admin_dashboard", lang=kwargs.get('lang', 'en')))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash("You must be logged in to access this page.", "warning")
+            return redirect(url_for("admin_login", lang=kwargs.get('lang', 'en')))
+        if not current_user.is_admin:
+            flash("You do not have permission to access this page.", "danger")
+            return redirect(url_for("admin_dashboard", lang=kwargs.get('lang', 'en')))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
+
+def pick_lang(lang):
+    """Language picker with fallback to English"""
+    if lang not in I18N:
+        lang = "en"
+    return lang, I18N[lang], ("ckb" if lang == "ckb" else "en")
+
+
+@app.context_processor
+def inject_globals():
+    lang = request.view_args.get('lang', 'en') if request.view_args else 'en'
+    _, t, lang_code = pick_lang(lang)
+    chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
+    return dict(t=t, lang=lang, lang_code=lang_code, chapters=chapters)
+
+
+def log_activity(action, target_type, target_id, description=''):
+    """Log user activity"""
+    if current_user.is_authenticated:
+        activity = Activity(
+            user_id=current_user.id,
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            description=description,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', '')[:500]
+        )
+        db.session.add(activity)
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+
+
+# New route to serve uploaded files
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+# New route for image upload
+@app.route('/api/<lang>/upload-image', methods=['POST'])
+@admin_required
+def upload_image(lang):
+    """Handle image upload"""
+    lang, t, lang_code = pick_lang(lang)
+
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'message': 'No image file provided'})
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No image selected'})
+
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'message': t['invalid_file_type']})
+
+    try:
+        # Generate unique filename
+        filename = generate_unique_filename(file.filename)
+
+        # Save original file
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'slides', filename)
+        file.save(file_path)
+
+        # Compress image
+        compress_image(file_path)
+
+        # Create thumbnail
+        thumbnail_filename = f"thumb_{filename}"
+        thumbnail_path = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails', thumbnail_filename)
+        create_thumbnail(file_path, thumbnail_path)
+
+        # Generate URLs
+        image_url = url_for('uploaded_file', filename=f'slides/{filename}')
+        thumbnail_url = url_for('uploaded_file', filename=f'thumbnails/{thumbnail_filename}')
+
+        return jsonify({
+            'success': True,
+            'message': t['upload_success'],
+            'filename': filename,
+            'thumbnail_filename': thumbnail_filename,
+            'image_url': image_url,
+            'thumbnail_url': thumbnail_url
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': t['upload_error']})
+
+
+# Enhanced slide creation/editing routes
 
 
 if __name__ == '__main__':

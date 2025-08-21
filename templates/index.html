@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section fade-in">
+  <div class="hero-content">
+    <h1 class="hero-title">{{ t.get('hero_title', 'Biology Study Guide') }}</h1>
+    <p class="hero-subtitle">{{ t.get('hero_subtitle', 'Comprehensive guide for biology students') }}</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('chapters', lang=lang) }}" class="btn btn-primary">
+        <i class="fas fa-list"></i> {{ t.get('cta_view_chapters', 'View All Chapters') }}
+      </a>
+      <a href="{{ url_for('guide', lang=lang) }}" class="btn btn-secondary">
+        <i class="fas fa-book-open"></i> {{ t.get('cta_open_guide', 'Open Full Guide') }}
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Access Cards - FROM DATABASE -->
+<section class="quick-cards fade-in">
+  <div class="section-header">
+    <h2 class="section-title">{{ t.get('quick_access', 'Quick Access Chapters') }}</h2>
+  </div>
+  <div class="cards-grid">
+    {% if chapters %}
+      {% for chapter in chapters[:8] %}
+      <div class="card">
+        <div class="card-icon">
+          <i class="{{ chapter.icon }}"></i>
+        </div>
+        <h3>{{ chapter.get_title(lang) }}</h3>
+        <p>{{ chapter.get_description(lang)[:150] }}{% if chapter.get_description(lang)|length > 150 %}...{% endif %}</p>
+        <div class="chapter-stats" style="margin-bottom: 1rem; font-size: 0.9rem; display: flex; justify-content: center; gap: 1rem;">
+          <div class="stat-item">
+            <i class="fas fa-file-alt" style="color: var(--secondary-teal);"></i>
+            <span>{{ chapter.get_slides_count() }}</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-eye" style="color: var(--accent-emerald);"></i>
+            <span>{{ chapter.get_total_views() }}</span>
+          </div>
+        </div>
+        <a href="{{ url_for('chapter', lang=lang, chapter_id=chapter.id) }}" class="card-link">
+          <i class="fas fa-arrow-right"></i> {{ t.get('view_chapter', 'View Chapter') }}
+        </a>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+        <p style="color: var(--medium-gray); font-size: 1.1rem;">{{ t.get('no_chapters', 'No chapters available yet.') }}</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

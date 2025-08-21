@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - {% if lang == 'ckb' %}دەستکاری بابەت{% else %}Edit Chapter{% endif %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --cell-teal: #2a9d8f;
+            --micro-gold: #f4a261;
+            --dna-purple: #6a4c93;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+            padding: 2rem;
+            background-attachment: fixed;
+        }
+
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 3rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .form-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .form-header h2 {
+            font-size: 2rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 1.25rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(248, 250, 252, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 140px;
+            font-family: inherit;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .icon-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(248, 250, 252, 0.5);
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .icon-option {
+            aspect-ratio: 1;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.5rem;
+            color: var(--secondary);
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .icon-option::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        .icon-option:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .icon-option:hover {
+            border-color: var(--primary);
+            color: white;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        }
+
+        .icon-option.selected {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+            transform: scale(1.1);
+        }
+
+        .icon-option.selected::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #f1f5f9;
+        }
+
+        .btn {
+            padding: 1.25rem 2rem;
+            border: none;
+            border-radius: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+            min-width: 150px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            color: white;
+            box-shadow: 0 5px 15px rgba(100, 116, 139, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), var(--warning));
+            color: white;
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .flash-messages {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1200;
+            max-width: 400px;
+        }
+
+        .flash-message {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideInLeft 0.4s ease;
+            border-left: 5px solid;
+            backdrop-filter: blur(10px);
+        }
+
+        .flash-message.success {
+            border-left-color: var(--success);
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .flash-message.error {
+            border-left-color: var(--danger);
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .flash-message.warning {
+            border-left-color: var(--warning);
+            color: var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .form-help {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-preview {
+            background: rgba(248, 250, 252, 0.7);
+            border: 2px dashed #d1d5db;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .form-preview.active {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .preview-chapter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .preview-chapter:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .preview-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .preview-content {
+            flex: 1;
+            text-align: left;
+        }
+
+        .preview-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .preview-desc {
+            color: var(--secondary);
+            font-size: 0.95rem;
+        }
+
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid #f1f5f9;
+        }
+
+        .stat-card {
+            background: rgba(248, 250, 252, 0.7);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .form-row {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .preview-content {
+            text-align: right;
+        }
+
+        [dir="rtl"] .flash-messages {
+            right: auto;
+            left: 2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .page-title {
+                font-size: 2rem;
+                justify-content: center;
+            }
+
+            .form-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .icon-selector {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            }
+
+            .flash-messages {
+                right: 1rem;
+                left: 1rem;
+                max-width: none;
+            }
+
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-triangle{% elif category == 'warning' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-edit"></i>
+                    {% if lang == 'ckb' %}دەستکاری بابەت{% else %}Edit Chapter{% endif %}
+                </h1>
+                <a href="{{ url_for('manage_chapters', lang=lang) }}" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    {% if lang == 'ckb' %}گەڕانەوە بۆ بەڕێوەبردن{% else %}Back to Management{% endif %}
+                </a>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <div class="form-container">
+            <div class="form-content">
+                <div class="form-header">
+                    <h2>{% if lang == 'ckb' %}دەستکاری بابەت{% else %}Edit Chapter{% endif %}</h2>
+                    <p>{% if lang == 'ckb' %}زانیاری بابەتەکە دەستکاری بکە{% else %}Update the chapter information{% endif %}</p>
+                </div>
+
+                <form id="chapterForm" method="POST" onsubmit="submitChapter(event)">
+                    <!-- Title Fields -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="titleEn">
+                                <i class="fas fa-font"></i>
+                                {% if lang == 'ckb' %}ناونیشان بە ئینگلیزی{% else %}Title (English){% endif %} *
+                            </label>
+                            <input type="text" id="titleEn" name="title_en" class="form-input" required
+                                   placeholder="{% if lang == 'ckb' %}ناونیشانی بابەت بە ئینگلیزی بنووسە{% else %}Enter chapter title in English{% endif %}"
+                                   value="{{ chapter.title_en }}" oninput="updatePreview()">
+                            <div class="form-help">
+                                <i class="fas fa-info-circle"></i>
+                                {% if lang == 'ckb' %}ناونیشانێکی کورت و واضح بنووسە{% else %}Enter a clear and concise title{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="titleCkb">
+                                <i class="fas fa-font"></i>
+                                {% if lang == 'ckb' %}ناونیشان بە کوردی{% else %}Title (Kurdish){% endif %} *
+                            </label>
+                            <input type="text" id="titleCkb" name="title_ckb" class="form-input" required
+                                   placeholder="{% if lang == 'ckb' %}ناونیشانی بابەت بە کوردی بنووسە{% else %}Enter chapter title in Kurdish{% endif %}"
+                                   value="{{ chapter.title_ckb }}" oninput="updatePreview()">
+                            <div class="form-help">
+                                <i class="fas fa-language"></i>
+                                {% if lang == 'ckb' %}ناونیشان بە سۆرانی بنووسە{% else %}Write title in Sorani Kurdish{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description Fields -->
+                    <div class="form-group">
+                        <label class="form-label" for="descriptionEn">
+                            <i class="fas fa-align-left"></i>
+                            {% if lang == 'ckb' %}پێناسە بە ئینگلیزی{% else %}Description (English){% endif %}
+                        </label>
+                        <textarea id="descriptionEn" name="description_en" class="form-textarea"
+                                  placeholder="{% if lang == 'ckb' %}پێناسەی تەواوی بابەت بە ئینگلیزی بنووسە{% else %}Enter detailed chapter description in English{% endif %}"
+                                  oninput="updatePreview()">{{ chapter.description_en or '' }}</textarea>
+                        <div class="form-help">
+                            <i class="fas fa-lightbulb"></i>
+                            {% if lang == 'ckb' %}ئەو بابەتانە کە لە بابەتەکەدا دەبیندرێنەوە باسبکە{% else %}Describe the topics covered in this chapter{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="descriptionCkb">
+                            <i class="fas fa-align-left"></i>
+                            {% if lang == 'ckb' %}پێناسە بە کوردی{% else %}Description (Kurdish){% endif %}
+                        </label>
+                        <textarea id="descriptionCkb" name="description_ckb" class="form-textarea"
+                                  placeholder="{% if lang == 'ckb' %}پێناسەی تەواوی بابەت بە کوردی بنووسە{% else %}Enter detailed chapter description in Kurdish{% endif %}"
+                                  oninput="updatePreview()">{{ chapter.description_ckb or '' }}</textarea>
+                        <div class="form-help">
+                            <i class="fas fa-pen"></i>
+                            {% if lang == 'ckb' %}پێناسەکە بە کوردی بنووسە{% else %}Write description in Kurdish{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Icon Selection -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-icons"></i>
+                            {% if lang == 'ckb' %}ئایکۆنی بابەت{% else %}Chapter Icon{% endif %}
+                        </label>
+                        <input type="hidden" id="chapterIcon" name="icon" value="{{ chapter.icon }}">
+                        <div class="icon-selector">
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-book' }}" data-icon="fas fa-book" title="{% if lang == 'ckb' %}کتێب{% else %}Book{% endif %}">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-microscope' }}" data-icon="fas fa-microscope" title="{% if lang == 'ckb' %}مایکرۆسکۆپ{% else %}Microscope{% endif %}">
+                                <i class="fas fa-microscope"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-dna' }}" data-icon="fas fa-dna" title="{% if lang == 'ckb' %}دی ئێن ئەی{% else %}DNA{% endif %}">
+                                <i class="fas fa-dna"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-leaf' }}" data-icon="fas fa-leaf" title="{% if lang == 'ckb' %}گەڵا{% else %}Leaf{% endif %}">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-bug' }}" data-icon="fas fa-bug" title="{% if lang == 'ckb' %}مێرووانە{% else %}Bug{% endif %}">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-virus' }}" data-icon="fas fa-virus" title="{% if lang == 'ckb' %}ڤایرۆس{% else %}Virus{% endif %}">
+                                <i class="fas fa-virus"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-heartbeat' }}" data-icon="fas fa-heartbeat" title="{% if lang == 'ckb' %}لێدانی دڵ{% else %}Heartbeat{% endif %}">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-seedling' }}" data-icon="fas fa-seedling" title="{% if lang == 'ckb' %}ڕووەک{% else %}Seedling{% endif %}">
+                                <i class="fas fa-seedling"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-fish' }}" data-icon="fas fa-fish" title="{% if lang == 'ckb' %}ماسی{% else %}Fish{% endif %}">
+                                <i class="fas fa-fish"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-tree' }}" data-icon="fas fa-tree" title="{% if lang == 'ckb' %}درەخت{% else %}Tree{% endif %}">
+                                <i class="fas fa-tree"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-atom' }}" data-icon="fas fa-atom" title="{% if lang == 'ckb' %}گەردیلە{% else %}Atom{% endif %}">
+                                <i class="fas fa-atom"></i>
+                            </div>
+                            <div class="icon-option {{ 'selected' if chapter.icon == 'fas fa-flask' }}" data-icon="fas fa-flask" title="{% if lang == 'ckb' %}تاقیگە{% else %}Laboratory{% endif %}">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                        </div>
+                        <div class="form-help">
+                            <i class="fas fa-palette"></i>
+                            {% if lang == 'ckb' %}ئایکۆنێک هەڵبژێرە کە نوێنەری بابەتەکە بکات{% else %}Choose an icon that represents the chapter topic{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Order Field (for super admins) -->
+                    {% if current_user.is_super_admin %}
+                    <div class="form-group">
+                        <label class="form-label" for="order">
+                            <i class="fas fa-sort-numeric-down"></i>
+                            {% if lang == 'ckb' %}ڕیزبەندی{% else %}Order{% endif %}
+                        </label>
+                        <input type="number" id="order" name="order" class="form-input"
+                               value="{{ chapter.order }}" min="1">
+                        <div class="form-help">
+                            <i class="fas fa-sort"></i>
+                            {% if lang == 'ckb' %}ژمارەی ڕیزبەندی بابەتەکە دیاری بکە{% else %}Set the chapter display order{% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Preview Section -->
+                    <div class="form-preview active" id="previewSection">
+                        <h3 style="margin-bottom: 1rem; color: var(--secondary);">
+                            <i class="fas fa-eye"></i>
+                            {% if lang == 'ckb' %}پیشبینین{% else %}Preview{% endif %}
+                        </h3>
+                        <div class="preview-chapter" id="chapterPreview">
+                            <div class="preview-icon">
+                                <i class="{{ chapter.icon }}"></i>
+                            </div>
+                            <div class="preview-content">
+                                <div class="preview-title" id="previewTitle">
+                                    {{ chapter.title_ckb if lang == 'ckb' else chapter.title_en }}
+                                </div>
+                                <div class="preview-desc" id="previewDesc">
+                                    {{ chapter.description_ckb if lang == 'ckb' and chapter.description_ckb else chapter.description_en if chapter.description_en else (t.chapters_intro if lang == 'ckb' else 'Chapter description will appear here') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chapter Stats -->
+                    <div class="stats-section">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ chapter.get_slides_count() }}</div>
+                            <div class="stat-label">
+                                <i class="fas fa-images"></i>
+                                {% if lang == 'ckb' %}کەرەستەی خوێندن{% else %}Study Materials{% endif %}
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ chapter.view_count }}</div>
+                            <div class="stat-label">
+                                <i class="fas fa-eye"></i>
+                                {% if lang == 'ckb' %}بینینەکان{% else %}Views{% endif %}
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ chapter.get_total_views() }}</div>
+                            <div class="stat-label">
+                                <i class="fas fa-chart-line"></i>
+                                {% if lang == 'ckb' %}کۆی بینینەکان{% else %}Total Views{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <a href="{{ url_for('manage_chapters', lang=lang) }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            {% if lang == 'ckb' %}هەڵوەشاندنەوە{% else %}Cancel{% endif %}
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save"></i>
+                            {% if lang == 'ckb' %}نوێکردنەوە{% else %}Update Chapter{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            setupIconSelector();
+            updatePreview();
+
+            console.log('{% if lang == "ckb" %}پەڕەی دەستکاری بابەت ئامادەیە{% else %}Edit chapter page ready{% endif %}');
+        });
+
+        // Setup icon selector
+        function setupIconSelector() {
+            document.querySelectorAll('.icon-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.icon-option').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('chapterIcon').value = this.dataset.icon;
+                    updatePreview();
+                });
+            });
+        }
+
+        // Update preview
+        function updatePreview() {
+            const titleEn = document.getElementById('titleEn').value;
+            const titleCkb = document.getElementById('titleCkb').value;
+            const descEn = document.getElementById('descriptionEn').value;
+            const descCkb = document.getElementById('descriptionCkb').value;
+            const selectedIcon = document.querySelector('.icon-option.selected');
+
+            const previewTitle = document.getElementById('previewTitle');
+            const previewDesc = document.getElementById('previewDesc');
+            const previewIcon = document.querySelector('.preview-icon i');
+            const previewSection = document.getElementById('previewSection');
+
+            // Update title
+            const currentTitle = '{{ lang }}' === 'ckb' ? (titleCkb || titleEn) : (titleEn || titleCkb);
+            previewTitle.textContent = currentTitle ||
+                ('{{ lang }}' === 'ckb' ? '{{ chapter.title_ckb }}' : '{{ chapter.title_en }}');
+
+            // Update description
+            const currentDesc = '{{ lang }}' === 'ckb' ? (descCkb || descEn) : (descEn || descCkb);
+            previewDesc.textContent = currentDesc ||
+                ('{{ lang }}' === 'ckb' ? '{{ chapter.description_ckb or t.chapters_intro }}' : '{{ chapter.description_en or t.chapters_intro }}');
+
+            // Update icon
+            if (selectedIcon) {
+                previewIcon.className = selectedIcon.dataset.icon;
+            }
+
+            // Activate preview if content exists
+            if (currentTitle || currentDesc) {
+                previewSection.classList.add('active');
+            } else {
+                previewSection.classList.remove('active');
+            }
+        }
+
+        // Submit form
+        function submitChapter(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+
+            // Validate required fields
+            const titleEn = document.getElementById('titleEn').value.trim();
+            const titleCkb = document.getElementById('titleCkb').value.trim();
+
+            if (!titleEn || !titleCkb) {
+                showAlert('{% if lang == "ckb" %}تکایە هەردوو ناونیشان پڕبکەرەوە{% else %}Please fill in both titles{% endif %}', 'error');
+                return;
+            }
+
+            // Update button state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {% if lang == "ckb" %}چاوەڕوان بە...{% else %}Updating...{% endif %}';
+            submitBtn.disabled = true;
+
+            // Submit form
+            const formData = new FormData(event.target);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.text();
+            })
+            .then(data => {
+                // Check if we have a JSON response
+                try {
+                    const jsonData = JSON.parse(data);
+                    if (jsonData.success) {
+                        showAlert(jsonData.message, 'success');
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('manage_chapters', lang=lang) }}";
+                        }, 1500);
+                    } else {
+                        showAlert(jsonData.message, 'error');
+                    }
+                } catch (e) {
+                    // Not JSON, likely HTML or redirect
+                    if (data.includes('success')) {
+                        showAlert('{% if lang == "ckb" %}بابەت بە سەرکەوتوویی نوێکرایەوە{% else %}Chapter updated successfully{% endif %}', 'success');
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('manage_chapters', lang=lang) }}";
+                        }, 1500);
+                    } else {
+                        throw new Error('Unexpected response');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('{% if lang == "ckb" %}هەڵە لە نوێکردنەوەی بابەت{% else %}Error updating chapter{% endif %}', 'error');
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `flash-message ${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+            let container = document.querySelector('.flash-messages');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.body.appendChild(container);
+            }
+
+            container.appendChild(alertDiv);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Auto-hide existing flash messages
+        setTimeout(function() {
+            document.querySelectorAll('.flash-message').forEach(function(message) {
+                message.style.opacity = '0';
+                message.style.transform = 'translateX(100%)';
+                setTimeout(function() {
+                    if (message.parentNode) {
+                        message.parentNode.removeChild(message);
+                    }
+                }, 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - {% if slide %}Edit{% else %}Add{% endif %} Study Material</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #1e40af;
+            --secondary-teal: #0891b2;
+            --accent-emerald: #059669;
+            --warm-gold: #f59e0b;
+            --light-gray: #f8fafc;
+            --dark-text: #1e293b;
+            --medium-gray: #64748b;
+            --success-green: #10b981;
+            --error-red: #ef4444;
+            --warning-orange: #f97316;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            color: var(--dark-text);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--medium-gray);
+            font-size: 1.1rem;
+        }
+
+        /* Form Container */
+        .form-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .form-section {
+            border-left: 4px solid var(--primary-blue);
+            padding-left: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--dark-text);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-text);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .required {
+            color: var(--error-red);
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            color: var(--dark-text);
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+            line-height: 1.6;
+        }
+
+        .form-textarea.large {
+            min-height: 200px;
+        }
+
+        /* Image Upload Styles */
+        .image-upload-section {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 2px dashed var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .image-upload-section.dragover {
+            border-color: var(--primary-blue);
+            background: rgba(30, 64, 175, 0.05);
+        }
+
+        .upload-options {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1.5rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area {
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-blue);
+            background: rgba(30, 64, 175, 0.02);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-blue);
+            background: rgba(30, 64, 175, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--medium-gray);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            color: var(--dark-text);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-hint {
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--medium-gray);
+            font-weight: 600;
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider span {
+            padding: 0 1rem;
+            background: var(--light-gray);
+        }
+
+        .url-input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .file-input-hidden {
+            display: none;
+        }
+
+        .image-preview-container {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .image-preview-container.show {
+            display: block;
+        }
+
+        .image-preview {
+            position: relative;
+            display: inline-block;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        .image-preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-preview:hover .image-preview-overlay {
+            opacity: 1;
+        }
+
+        .preview-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--dark-text);
+        }
+
+        .preview-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .remove-image-btn {
+            background: var(--error-red);
+            color: white;
+        }
+
+        .remove-image-btn:hover {
+            background: #dc2626;
+        }
+
+        .upload-progress {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .upload-progress.show {
+            display: block;
+        }
+
+        .progress-bar-container {
+            background: var(--border-color);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-teal));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+        }
+
+        /* Character Counter */
+        .char-counter {
+            font-size: 0.85rem;
+            color: var(--medium-gray);
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+
+        /* Help Text */
+        .help-text {
+            font-size: 0.85rem;
+            color: var(--medium-gray);
+            margin-top: 0.25rem;
+            line-height: 1.4;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+
+        .flash-message {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+
+        .flash-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-red);
+            border-left: 4px solid var(--error-red);
+        }
+
+        .flash-message.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-green);
+            border-left: 4px solid var(--success-green);
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 1rem;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            color: white;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-green), var(--accent-emerald));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--light-gray);
+            color: var(--medium-gray);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+            color: var(--dark-text);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Loading State */
+        .btn.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .btn.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Image Quality Options */
+        .quality-options {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid var(--warning-orange);
+            border-radius: 8px;
+        }
+
+        .quality-options.show {
+            display: block;
+        }
+
+        .quality-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quality-option:last-child {
+            margin-bottom: 0;
+        }
+
+        .quality-option input[type="radio"] {
+            margin: 0;
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .form-section {
+            border-left: none;
+            border-right: 4px solid var(--primary-blue);
+            padding-left: 0;
+            padding-right: 1.5rem;
+        }
+
+        [dir="rtl"] .char-counter {
+            text-align: left;
+        }
+
+        [dir="rtl"] .form-actions {
+            justify-content: flex-start;
+        }
+
+        [dir="rtl"] .flash-message {
+            border-left: none;
+            border-right: 4px solid;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .form-container {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .upload-options {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .form-container {
+                padding: 1rem;
+            }
+
+            .page-title {
+                font-size: 1.8rem;
+            }
+
+            .section-title {
+                font-size: 1.1rem;
+            }
+
+            .form-section {
+                padding-left: 1rem;
+            }
+
+            [dir="rtl"] .form-section {
+                padding-right: 1rem;
+            }
+
+            .image-upload-section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-microscope"></i>
+                Biology Study Material Management
+            </h1>
+            <p class="page-subtitle">Add or edit study slides with interactive content</p>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            <div class="flash-message success" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <span id="success-message">Slide saved successfully!</span>
+            </div>
+            <div class="flash-message error" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="error-message">An error occurred. Please try again.</span>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <div class="form-container">
+            <form id="slideForm" method="POST" enctype="multipart/form-data">
+                <div class="form-grid">
+
+                    <!-- Basic Information Section -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Basic Information
+                        </h2>
+
+                        <!-- Chapter Selection -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="chapter_id">
+                                    <i class="fas fa-book"></i>
+                                    Chapter <span class="required">*</span>
+                                </label>
+                                <select class="form-select" id="chapter_id" name="chapter_id" required>
+                                    <option value="">Select a chapter...</option>
+                                    <option value="1">Chapter 1: Histology</option>
+                                    <option value="2">Chapter 2: Embryology</option>
+                                    <option value="3">Chapter 3: Plant Anatomy</option>
+                                    <option value="4">Chapter 4: Parasitology</option>
+                                    <option value="5">Chapter 5: Hematology</option>
+                                    <option value="6">Chapter 6: Microbiology</option>
+                                    <option value="7">Chapter 7: Entomology</option>
+                                    <option value="8">Chapter 8: Algae Studies</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="order">
+                                    <i class="fas fa-sort-numeric-up"></i>
+                                    Display Order
+                                </label>
+                                <input type="number" class="form-input" id="order" name="order"
+                                       value="1" min="1" max="999">
+                                <div class="help-text">Order in which this slide appears in the chapter</div>
+                            </div>
+                        </div>
+
+                        <!-- Titles -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="title_en">
+                                    <i class="fas fa-heading"></i>
+                                    Title (English) <span class="required">*</span>
+                                </label>
+                                <input type="text" class="form-input" id="title_en" name="title_en"
+                                       placeholder="Enter slide title in English" required maxlength="200">
+                                <div class="char-counter">
+                                    <span id="title-en-count">0</span>/200
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="title_ckb">
+                                    <i class="fas fa-heading"></i>
+                                    Title (Kurdish) <span class="required">*</span>
+                                </label>
+                                <input type="text" class="form-input" id="title_ckb" name="title_ckb"
+                                       placeholder="سەرناوی سلاید بە کوردی بنووسە" required maxlength="200">
+                                <div class="char-counter">
+                                    <span id="title-ckb-count">0</span>/200
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-image"></i>
+                            Study Material Image
+                        </h2>
+
+                        <div class="image-upload-section" id="imageUploadSection">
+                            <div class="upload-options">
+                                <!-- File Upload Area -->
+                                <div class="upload-area" id="uploadArea">
+                                    <div class="upload-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <div class="upload-text">Select Image File</div>
+                                    <div class="upload-hint">PNG, JPG, JPEG, GIF, WEBP (Max: 5MB)</div>
+                                </div>
+
+                                <!-- Divider -->
+                                <div class="divider">
+                                    <span>or</span>
+                                </div>
+
+                                <!-- URL Input Area -->
+                                <div class="url-input-area">
+                                    <input type="text" class="form-input" id="image_url" name="image_url"
+                                           placeholder="Provide Image URL" value="">
+                                    <div class="help-text">Enter a direct link to an image hosted online</div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden File Input -->
+                            <input type="file" id="imageFile" name="image" class="file-input-hidden"
+                                   accept=".png,.jpg,.jpeg,.gif,.webp">
+
+                            <!-- Hidden fields for uploaded image data -->
+                            <input type="hidden" id="image_filename" name="image_filename" value="">
+                            <input type="hidden" id="thumbnail_filename" name="thumbnail_filename" value="">
+
+                            <!-- Upload Progress -->
+                            <div class="upload-progress" id="uploadProgress">
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="progressBar"></div>
+                                </div>
+                                <div class="progress-text" id="progressText">Uploading...</div>
+                            </div>
+
+                            <!-- Image Preview -->
+                            <div class="image-preview-container" id="imagePreviewContainer">
+                                <h3 class="section-title">
+                                    <i class="fas fa-eye"></i>
+                                    Image Preview
+                                </h3>
+                                <div class="image-preview" id="imagePreview">
+                                    <img id="previewImage" src="" alt="Preview">
+                                    <div class="image-preview-overlay">
+                                        <button type="button" class="preview-btn" id="viewFullBtn" title="View Full Size">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
+                                        <button type="button" class="preview-btn remove-image-btn" id="removeImageBtn" title="Remove Image">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quality Options for Large Files -->
+                            <div class="quality-options" id="qualityOptions">
+                                <h4>File too large! Choose compression:</h4>
+                                <div class="quality-option">
+                                    <input type="radio" id="high_quality" name="compression" value="high" checked>
+                                    <label for="high_quality">High Quality (larger file)</label>
+                                </div>
+                                <div class="quality-option">
+                                    <input type="radio" id="medium_quality" name="compression" value="medium">
+                                    <label for="medium_quality">Medium Quality (balanced)</label>
+                                </div>
+                                <div class="quality-option">
+                                    <input type="radio" id="low_quality" name="compression" value="low">
+                                    <label for="low_quality">Low Quality (smaller file)</label>
+                                </div>
+                                <button type="button" class="btn btn-outline" id="compressAndUpload">
+                                    <i class="fas fa-compress-alt"></i>
+                                    Compress & Upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Section -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-edit"></i>
+                            Study Content
+                        </h2>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="content_en">
+                                    <i class="fas fa-align-left"></i>
+                                    Content (English)
+                                </label>
+                                <textarea class="form-textarea large" id="content_en" name="content_en"
+                                          placeholder="Detailed description and study notes in English" maxlength="2000"></textarea>
+                                <div class="char-counter">
+                                    <span id="content-en-count">0</span>/2000
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="content_ckb">
+                                    <i class="fas fa-align-left"></i>
+                                    Content (Kurdish)
+                                </label>
+                                <textarea class="form-textarea large" id="content_ckb" name="content_ckb"
+                                          placeholder="ناوەڕۆکی تەواو و تێبینی خوێندن بە کوردی" maxlength="2000"></textarea>
+                                <div class="char-counter">
+                                    <span id="content-ckb-count">0</span>/2000
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information Section -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-list-ul"></i>
+                            Additional Study Details
+                        </h2>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="components">
+                                    <i class="fas fa-puzzle-piece"></i>
+                                    Components
+                                </label>
+                                <textarea class="form-textarea" id="components" name="components"
+                                          placeholder="List key components, structures, or parts (one per line)" maxlength="1000"></textarea>
+                                <div class="help-text">List the main structural components or parts visible in the study material</div>
+                                <div class="char-counter">
+                                    <span id="components-count">0</span>/1000
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Location
+                                </label>
+                                <textarea class="form-textarea" id="location" name="location"
+                                          placeholder="Where this structure/organism is typically found" maxlength="500"></textarea>
+                                <div class="help-text">Describe the anatomical location or natural habitat</div>
+                                <div class="char-counter">
+                                    <span id="location-count">0</span>/500
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="functions">
+                                    <i class="fas fa-cogs"></i>
+                                    Functions
+                                </label>
+                                <textarea class="form-textarea" id="functions" name="functions"
+                                          placeholder="Primary functions and biological roles" maxlength="1000"></textarea>
+                                <div class="help-text">Describe the main biological functions and roles</div>
+                                <div class="char-counter">
+                                    <span id="functions-count">0</span>/1000
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success" id="saveBtn">
+                        <i class="fas fa-save"></i>
+                        Save Study Material
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentImageFile = null;
+        let uploadedImageData = null;
+
+        // Initialize the form
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeForm();
+            setupEventListeners();
+            setupCharacterCounters();
+            setupImageHandling();
+        });
+
+        function initializeForm() {
+            // Set default chapter and order if editing
+            const slide = null; // This would be populated from server data
+            if (slide) {
+                document.getElementById('chapter_id').value = slide.chapter_id;
+                document.getElementById('order').value = slide.order;
+                document.getElementById('title_en').value = slide.title_en;
+                document.getElementById('title_ckb').value = slide.title_ckb;
+                document.getElementById('content_en').value = slide.content_en || '';
+                document.getElementById('content_ckb').value = slide.content_ckb || '';
+                document.getElementById('components').value = slide.components || '';
+                document.getElementById('location').value = slide.location || '';
+                document.getElementById('functions').value = slide.functions || '';
+                document.getElementById('image_url').value = slide.image_url || '';
+
+                // Show existing image if available
+                if (slide.image_filename || slide.image_url) {
+                    const imageUrl = slide.image_filename ?
+                        `/uploads/slides/${slide.image_filename}` :
+                        slide.image_url;
+                    showImagePreview(imageUrl);
+                }
+            }
+        }
+
+        function setupEventListeners() {
+            const form = document.getElementById('slideForm');
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('imageFile');
+            const imageUrlInput = document.getElementById('image_url');
+            const removeImageBtn = document.getElementById('removeImageBtn');
+            const viewFullBtn = document.getElementById('viewFullBtn');
+            const compressBtn = document.getElementById('compressAndUpload');
+
+            // Form submission
+            form.addEventListener('submit', handleFormSubmit);
+
+            // File upload area click
+            uploadArea.addEventListener('click', () => fileInput.click());
+
+            // File input change
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Image URL input change
+            imageUrlInput.addEventListener('input', debounce(handleImageUrlChange, 500));
+
+            // Drag and drop
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+
+            // Image preview actions
+            removeImageBtn.addEventListener('click', removeImage);
+            viewFullBtn.addEventListener('click', viewFullImage);
+
+            // Compression
+            compressBtn.addEventListener('click', handleImageCompression);
+
+            // Prevent default drag behaviors on document
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.addEventListener(eventName, preventDefaults, false);
+            });
+        }
+
+        function setupCharacterCounters() {
+            const fields = [
+                { input: 'title_en', counter: 'title-en-count', max: 200 },
+                { input: 'title_ckb', counter: 'title-ckb-count', max: 200 },
+                { input: 'content_en', counter: 'content-en-count', max: 2000 },
+                { input: 'content_ckb', counter: 'content-ckb-count', max: 2000 },
+                { input: 'components', counter: 'components-count', max: 1000 },
+                { input: 'location', counter: 'location-count', max: 500 },
+                { input: 'functions', counter: 'functions-count', max: 1000 }
+            ];
+
+            fields.forEach(field => {
+                const input = document.getElementById(field.input);
+                const counter = document.getElementById(field.counter);
+
+                if (input && counter) {
+                    const updateCounter = () => {
+                        const length = input.value.length;
+                        counter.textContent = length;
+                        counter.style.color = length > field.max * 0.9 ? 'var(--error-red)' : 'var(--medium-gray)';
+                    };
+
+                    input.addEventListener('input', updateCounter);
+                    updateCounter(); // Initialize
+                }
+            });
+        }
+
+        function setupImageHandling() {
+            // Initialize image handling state
+            resetImageUpload();
+        }
+
+        // Form submission handler
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerHTML;
+
+            // Show loading state
+            saveBtn.classList.add('loading');
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const formData = new FormData(e.target);
+
+                // Add uploaded image data if available
+                if (uploadedImageData) {
+                    formData.set('image_filename', uploadedImageData.filename);
+                    formData.set('thumbnail_filename', uploadedImageData.thumbnail_filename);
+                }
+
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessMessage(result.message || 'Study material saved successfully!');
+
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = `/en/admin/chapter/${formData.get('chapter_id')}/slides`;
+                    }, 1500);
+                } else {
+                    showErrorMessage(result.message || 'Failed to save study material.');
+                }
+            } catch (error) {
+                console.error('Form submission error:', error);
+                showErrorMessage('An error occurred. Please try again.');
+            } finally {
+                // Restore button state
+                saveBtn.classList.remove('loading');
+                saveBtn.innerHTML = originalText;
+            }
+        }
+
+        // File handling functions
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processSelectedFile(file);
+            }
+        }
+
+        function handleDragOver(e) {
+            preventDefaults(e);
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            preventDefaults(e);
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            preventDefaults(e);
+            e.currentTarget.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processSelectedFile(files[0]);
+            }
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        async function processSelectedFile(file) {
+            // Validate file type
+            const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showErrorMessage('Invalid file type. Please select PNG, JPG, JPEG, GIF, or WEBP files.');
+                return;
+            }
+
+            // Check file size (5MB limit)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showQualityOptions(file);
+                return;
+            }
+
+            // Clear image URL input if file is selected
+            document.getElementById('image_url').value = '';
+
+            currentImageFile = file;
+            await uploadImage(file);
+        }
+
+        async function uploadImage(file) {
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            // Show progress
+            progressContainer.classList.add('show');
+            progressText.textContent = 'Uploading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/en/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    uploadedImageData = {
+                        filename: result.filename,
+                        thumbnail_filename: result.thumbnail_filename,
+                        image_url: result.image_url,
+                        thumbnail_url: result.thumbnail_url
+                    };
+
+                    // Set hidden form fields
+                    document.getElementById('image_filename').value = result.filename;
+                    document.getElementById('thumbnail_filename').value = result.thumbnail_filename;
+
+                    // Show preview
+                    showImagePreview(result.image_url);
+
+                    progressText.textContent = 'Upload complete!';
+                    setTimeout(() => {
+                        progressContainer.classList.remove('show');
+                    }, 1000);
+
+                } else {
+                    throw new Error(result.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showErrorMessage('Error uploading image: ' + error.message);
+                progressContainer.classList.remove('show');
+            }
+        }
+
+        function handleImageUrlChange(e) {
+            const url = e.target.value.trim();
+
+            if (url) {
+                // Clear uploaded file data
+                resetImageUpload();
+
+                // Show preview of URL image
+                showImagePreview(url);
+            } else {
+                hideImagePreview();
+            }
+        }
+
+        function showImagePreview(imageUrl) {
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const previewImage = document.getElementById('previewImage');
+
+            previewImage.src = imageUrl;
+            previewContainer.classList.add('show');
+
+            // Handle image load error
+            previewImage.onerror = function() {
+                showErrorMessage('Failed to load image. Please check the URL or try a different image.');
+                hideImagePreview();
+            };
+        }
+
+        function hideImagePreview() {
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            previewContainer.classList.remove('show');
+        }
+
+        function removeImage() {
+            resetImageUpload();
+            hideImagePreview();
+            document.getElementById('image_url').value = '';
+        }
+
+        function resetImageUpload() {
+            currentImageFile = null;
+            uploadedImageData = null;
+            document.getElementById('imageFile').value = '';
+            document.getElementById('image_filename').value = '';
+            document.getElementById('thumbnail_filename').value = '';
+            hideQualityOptions();
+        }
+
+        function viewFullImage() {
+            const previewImage = document.getElementById('previewImage');
+            const imageUrl = previewImage.src;
+
+            if (imageUrl) {
+                // Create modal or open in new window
+                window.open(imageUrl, '_blank');
+            }
+        }
+
+        function showQualityOptions(file) {
+            const qualityOptions = document.getElementById('qualityOptions');
+            qualityOptions.classList.add('show');
+            currentImageFile = file;
+        }
+
+        function hideQualityOptions() {
+            const qualityOptions = document.getElementById('qualityOptions');
+            qualityOptions.classList.remove('show');
+        }
+
+        async function handleImageCompression() {
+            if (!currentImageFile) return;
+
+            const compressionLevel = document.querySelector('input[name="compression"]:checked').value;
+
+            try {
+                // Create canvas for compression
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+
+                img.onload = function() {
+                    // Calculate new dimensions
+                    let { width, height } = img;
+                    const maxWidth = compressionLevel === 'high' ? 1920 :
+                                   compressionLevel === 'medium' ? 1280 : 800;
+                    const maxHeight = compressionLevel === 'high' ? 1080 :
+                                    compressionLevel === 'medium' ? 720 : 600;
+
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                    if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // Draw and compress
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const quality = compressionLevel === 'high' ? 0.9 :
+                                  compressionLevel === 'medium' ? 0.7 : 0.5;
+
+                    canvas.toBlob(async (blob) => {
+                        const compressedFile = new File([blob], currentImageFile.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+
+                        hideQualityOptions();
+                        await uploadImage(compressedFile);
+                    }, 'image/jpeg', quality);
+                };
+
+                img.src = URL.createObjectURL(currentImageFile);
+
+            } catch (error) {
+                console.error('Compression error:', error);
+                showErrorMessage('Error compressing image. Please try again.');
+            }
+        }
+
+        // Utility functions
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function showSuccessMessage(message) {
+            const messageEl = document.querySelector('.flash-message.success');
+            const textEl = document.getElementById('success-message');
+
+            textEl.textContent = message;
+            messageEl.style.display = 'flex';
+
+            // Hide error message if visible
+            document.querySelector('.flash-message.error').style.display = 'none';
+
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function showErrorMessage(message) {
+            const messageEl = document.querySelector('.flash-message.error');
+            const textEl = document.getElementById('error-message');
+
+            textEl.textContent = message;
+            messageEl.style.display = 'flex';
+
+            // Hide success message if visible
+            document.querySelector('.flash-message.success').style.display = 'none';
+
+            // Auto hide after 7 seconds
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 7000);
+        }
+
+        // Form validation
+        function validateForm() {
+            const requiredFields = [
+                { field: 'chapter_id', message: 'Please select a chapter' },
+                { field: 'title_en', message: 'Please enter an English title' },
+                { field: 'title_ckb', message: 'Please enter a Kurdish title' }
+            ];
+
+            for (const { field, message } of requiredFields) {
+                const element = document.getElementById(field);
+                if (!element.value.trim()) {
+                    showErrorMessage(message);
+                    element.focus();
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Auto-save functionality (optional)
+        let autoSaveTimeout;
+        function setupAutoSave() {
+            const form = document.getElementById('slideForm');
+            const inputs = form.querySelectorAll('input, textarea, select');
+
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(autoSaveTimeout);
+                    autoSaveTimeout = setTimeout(() => {
+                        saveAsDraft();
+                    }, 10000); // Auto-save after 10 seconds of inactivity
+                });
+            });
+        }
+
+        async function saveAsDraft() {
+            const formData = new FormData(document.getElementById('slideForm'));
+            formData.append('save_as_draft', 'true');
+
+            try {
+                await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Show brief notification
+                console.log('Draft saved automatically');
+            } catch (error) {
+                console.error('Auto-save failed:', error);
+            }
+        }
+
+        // Initialize auto-save if desired
+        // setupAutoSave();
+    </script>
+</body>
+</html>

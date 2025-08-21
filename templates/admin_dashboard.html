@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - {{ t.dashboard }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --cell-teal: #2a9d8f;
+            --micro-gold: #f4a261;
+            --dna-purple: #6a4c93;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+            background-attachment: fixed;
+            direction: {{ 'rtl' if lang_code == 'ckb' else 'ltr' }};
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        /* Enhanced Glassmorphism Sidebar */
+        .sidebar {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            box-shadow: {{ '4px 0 25px rgba(0, 0, 0, 0.15)' if lang_code != 'ckb' else '-4px 0 25px rgba(0, 0, 0, 0.15)' }};
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            {{ 'right: 0;' if lang_code == 'ckb' else 'left: 0;' }}
+            border-{{ 'left' if lang_code == 'ckb' else 'right' }}: 3px solid var(--micro-gold);
+        }
+
+        .sidebar-header {
+            padding: 2.5rem 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .sidebar-brand {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .sidebar-brand:hover {
+            transform: translate{{ 'X(-5px)' if lang_code == 'ckb' else 'X(5px)' }};
+        }
+
+        .user-profile {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin: 1.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-profile::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--micro-gold), var(--dna-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 1;
+            transition: transform 0.5s ease;
+        }
+
+        .user-avatar:hover {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        .user-info {
+            text-align: center;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .user-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-role {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            background: rgba(0,0,0,0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 1rem;
+            display: inline-block;
+        }
+
+        .sidebar-nav {
+            padding: 1.5rem 0;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 2rem 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .nav-item {
+            margin: 0.3rem 1rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            color: #64748b;
+            text-decoration: none;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            background: rgba(255,255,255,0.7);
+            border: 1px solid #e2e8f0;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            {{ 'right: 0;' if lang_code == 'ckb' else 'left: 0;' }}
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            transform: scaleY(1);
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(42, 157, 143, 0.1));
+            color: var(--primary);
+            transform: translate{{ 'X(-8px)' if lang_code == 'ckb' else 'X(8px)' }};
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            transform: translate{{ 'X(-8px)' if lang_code == 'ckb' else 'X(8px)' }};
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+            width: 25px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover i {
+            transform: scale(1.2);
+        }
+
+        .nav-badge {
+            background: var(--danger);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            {{ 'margin-right: auto;' if lang_code == 'ckb' else 'margin-left: auto;' }}
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Enhanced Glassmorphism Main Content */
+        .main-content {
+            {{ 'margin-right: 320px;' if lang_code == 'ckb' else 'margin-left: 320px;' }}
+            flex: 1;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .main-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .main-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-subtitle {
+            color: var(--secondary);
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .notification-bell {
+            position: relative;
+            background: linear-gradient(135deg, var(--micro-gold), var(--dna-purple));
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(244, 162, 97, 0.3);
+        }
+
+        .notification-bell:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 8px 20px rgba(244, 162, 97, 0.4);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            {{ 'left: -5px;' if lang_code == 'ckb' else 'right: -5px;' }}
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Enhanced Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            text-align: {{ 'right' if lang_code == 'ckb' else 'left' }};
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            {{ 'right: 0;' if lang_code == 'ckb' else 'left: 0;' }}
+            {{ 'left: 0;' if lang_code == 'ckb' else 'right: 0;' }}
+            height: 5px;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+        }
+
+        .stat-card.chapters::before {
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+        }
+
+        .stat-card.slides::before {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .stat-card.users::before {
+            background: linear-gradient(135deg, var(--micro-gold), var(--dna-purple));
+        }
+
+        .stat-card.activity::before {
+            background: linear-gradient(135deg, var(--info), #0891b2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: white;
+            position: relative;
+            transition: transform 0.5s ease;
+            {{ 'margin-left: auto; margin-right: 0;' if lang_code == 'ckb' else '' }}
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1) rotate(10deg);
+        }
+
+        .stat-icon.chapters {
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+        }
+
+        .stat-icon.slides {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .stat-icon.users {
+            background: linear-gradient(135deg, var(--micro-gold), var(--dna-purple));
+        }
+
+        .stat-icon.activity {
+            background: linear-gradient(135deg, var(--info), #0891b2);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover .stat-number {
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--secondary);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            {{ 'flex-direction: row-reverse; justify-content: flex-end;' if lang_code == 'ckb' else '' }}
+        }
+
+        .stat-change.positive {
+            color: var(--success);
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            z-index: -1;
+            transition: transform 0.5s ease;
+        }
+
+        .btn-primary::before {
+            transform: scaleX(1);
+        }
+
+        .btn-outline::before {
+            transform: scaleX(0);
+        }
+
+        .btn-primary {
+            background: transparent;
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            color: white;
+        }
+
+        .btn-outline:hover::before {
+            transform: scaleX(1);
+        }
+
+        .flash-messages {
+            position: fixed;
+            top: 2rem;
+            {{ 'left: 2rem;' if lang_code == 'ckb' else 'right: 2rem;' }}
+            z-index: 1200;
+            max-width: 400px;
+        }
+
+        .flash-message {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn{{ 'Right' if lang_code == 'ckb' else 'Left' }} 0.4s ease;
+            backdrop-filter: blur(10px);
+            border-{{ 'left' if lang_code == 'ckb' else 'right' }}: 5px solid;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .flash-message.success {
+            border-{{ 'left' if lang_code == 'ckb' else 'right' }}-color: var(--success);
+            color: var(--success);
+        }
+
+        .flash-message.error {
+            border-{{ 'left' if lang_code == 'ckb' else 'right' }}-color: var(--danger);
+            color: var(--danger);
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            margin-bottom: 3rem;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-actions::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f1f5f9;
+            position: relative;
+            z-index: 1;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .quick-action-btn {
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.7), rgba(241, 245, 249, 0.7));
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(226, 232, 240, 0.5);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            text-decoration: none;
+            color: var(--dark);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .quick-action-btn:hover {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.8), rgba(42, 157, 143, 0.8));
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4);
+        }
+
+        .quick-action-btn i {
+            font-size: 2.5rem;
+            transition: transform 0.5s ease;
+        }
+
+        .quick-action-btn:hover i {
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        .quick-action-text {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Chapters Section */
+        .chapters-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            margin-bottom: 3rem;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chapters-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .chapters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chapter-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .chapter-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .chapter-header {
+            background: linear-gradient(135deg, rgba(241, 245, 249, 0.8), rgba(226, 232, 240, 0.8));
+            padding: 2rem;
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .chapter-number {
+            position: absolute;
+            top: -15px;
+            {{ 'left: 25px;' if lang_code == 'ckb' else 'right: 25px;' }}
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.3rem;
+            border: 3px solid white;
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+            transition: transform 0.5s ease;
+        }
+
+        .chapter-card:hover .chapter-number {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        .chapter-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 0.75rem;
+            {{ 'margin-right: 60px;' if lang_code == 'ckb' else 'margin-left: 60px;' }}
+            transition: color 0.3s ease;
+            text-align: {{ 'right' if lang_code == 'ckb' else 'left' }};
+        }
+
+        .chapter-card:hover .chapter-title {
+            color: var(--primary);
+        }
+
+        .chapter-desc {
+            color: var(--secondary);
+            line-height: 1.6;
+            text-align: {{ 'right' if lang_code == 'ckb' else 'left' }};
+        }
+
+        .chapter-stats {
+            padding: 1.5rem 2rem;
+            background: white;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            border-top: 1px solid #e2e8f0;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--secondary);
+            font-size: 0.95rem;
+            {{ 'flex-direction: row-reverse; justify-content: flex-end;' if lang_code == 'ckb' else '' }}
+        }
+
+        .stat-item i {
+            color: var(--primary);
+            width: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .chapter-card:hover .stat-item i {
+            color: var(--cell-teal);
+        }
+
+        .chapter-actions {
+            padding: 1.5rem 2rem;
+            background: #f8fafc;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            backdrop-filter: blur(5px);
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        /* Real-time Updates */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--success);
+            margin-top: 0.5rem;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 2rem;
+            {{ 'left: 2rem;' if lang_code == 'ckb' else 'right: 2rem;' }}
+            z-index: 1100;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .mobile-menu-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Recent Activity */
+        .recent-activity {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            margin-bottom: 3rem;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recent-activity::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .activity-list {
+            position: relative;
+            z-index: 1;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 1rem;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.create {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .activity-icon.edit {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+        }
+
+        .activity-icon.delete {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+        }
+
+        .activity-icon.view {
+            background: linear-gradient(135deg, var(--info), #0891b2);
+        }
+
+        .activity-content {
+            flex: 1;
+            text-align: {{ 'right' if lang_code == 'ckb' else 'left' }};
+        }
+
+        .activity-description {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--secondary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translate{{ 'X(100%)' if lang_code == 'ckb' else 'X(-100%)' }};
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-{{ 'right' if lang_code == 'ckb' else 'left' }}: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .header-title {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+
+            .chapters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .main-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .header-title {
+                font-size: 1.8rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .quick-actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-container">
+        <!-- Enhanced Glassmorphism Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <i class="fas fa-microscope"></i>
+                    <span>{{ t.site_title }}</span>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar">{{ current_user.username[0].upper() }}</div>
+                    <div class="user-info">
+                        <div class="user-name">{{ current_user.username }}</div>
+                        <div class="user-role">
+                            {% if current_user.is_super_admin %}
+                                {% if lang == 'ckb' %}بەڕێوەبەری گشتی{% else %}Super Admin{% endif %}
+                            {% else %}
+                                {% if lang == 'ckb' %}بەڕێوەبەری بابەت{% else %}Chapter Admin{% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">{{ t.dashboard }}</div>
+                    <div class="nav-item">
+                        <a href="{{ url_for('admin_dashboard', lang=lang) }}" class="nav-link active">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>{{ t.dashboard }}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">{{ t.chapters if current_user.is_super_admin else t.chapter }}</div>
+                    <div class="nav-item">
+                        <a href="{{ url_for('manage_chapters', lang=lang) }}" class="nav-link">
+                            <i class="fas fa-book"></i>
+                            <span>{{ t.chapters }}</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ url_for('manage_slides', lang=lang, chapter_id=current_user.chapter_id if current_user.chapter_id else chapters[0].chapter.id if chapters else 1) }}" class="nav-link">
+                            <i class="fas fa-images"></i>
+                            <span>{{ t.slides }}</span>
+                        </a>
+                    </div>
+                    {% if current_user.is_super_admin %}
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-users"></i>
+                            <span>{{ t.users }}</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">{{ t.analytics }}</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>{{ t.analytics }}</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-cog"></i>
+                            <span>{{ t.settings }}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-item">
+                        <a href="{{ url_for('index', lang=lang) }}" class="nav-link">
+                            <i class="fas fa-globe"></i>
+                            <span>{{ t.view_website }}</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{{ url_for('admin_logout', lang=lang) }}" class="nav-link">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>{{ t.logout }}</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Enhanced Glassmorphism Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <div>
+                    <h1 class="header-title">{{ t.welcome }}, {{ current_user.username }}!</h1>
+                    <p class="header-subtitle">{{ t.dashboard if lang == 'en' else 'داشبۆرد' }}</p>
+                    <div class="live-indicator">
+                        <div class="live-dot"></div>
+                        <span>Live Dashboard</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">{{ stats.recent_activities_count or 0 }}</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Enhanced Stats Cards -->
+            <section class="stats-grid" id="stats-grid">
+                <div class="stat-card chapters">
+                    <div class="stat-icon chapters">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-number" id="total-chapters">{{ stats.total_chapters }}</div>
+                    <div class="stat-label">{{ t.total_chapters }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Active chapters</span>
+                    </div>
+                </div>
+
+                <div class="stat-card slides">
+                    <div class="stat-icon slides">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <div class="stat-number" id="total-slides">{{ stats.total_slides }}</div>
+                    <div class="stat-label">{{ t.total_slides }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Study materials</span>
+                    </div>
+                </div>
+
+                <div class="stat-card users">
+                    <div class="stat-icon users">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-number" id="total-users">{{ stats.total_users }}</div>
+                    <div class="stat-label">{{ t.total_users }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>System users</span>
+                    </div>
+                </div>
+
+                <div class="stat-card activity">
+                    <div class="stat-icon activity">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-number" id="activity-percentage">{{ stats.activity_percentage }}%</div>
+                    <div class="stat-label">{{ t.activity }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>System activity</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-bolt"></i>
+                        {{ t.quick_actions }}
+                    </h2>
+                </div>
+
+                <div class="quick-actions-grid">
+                    <a href="{{ url_for('add_slide', lang=lang) }}" class="quick-action-btn">
+                        <i class="fas fa-plus"></i>
+                        <span class="quick-action-text">{{ t.add_new_slide }}</span>
+                    </a>
+
+                    <a href="{{ url_for('manage_chapters', lang=lang) }}" class="quick-action-btn">
+                        <i class="fas fa-edit"></i>
+                        <span class="quick-action-text">{{ t.edit_chapters }}</span>
+                    </a>
+
+                    <a href="#" onclick="exportData()" class="quick-action-btn">
+                        <i class="fas fa-download"></i>
+                        <span class="quick-action-text">{{ t.export_data }}</span>
+                    </a>
+
+                    <a href="#" class="quick-action-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="quick-action-text">{{ t.view_analytics }}</span>
+                    </a>
+
+                    {% if current_user.is_super_admin %}
+                    <a href="#" class="quick-action-btn">
+                        <i class="fas fa-database"></i>
+                        <span class="quick-action-text">{{ t.backup_system }}</span>
+                    </a>
+
+                    <a href="{{ url_for('add_chapter', lang=lang) }}" class="quick-action-btn">
+                        <i class="fas fa-plus-circle"></i>
+                        <span class="quick-action-text">{{ t.add_chapter }}</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Chapters Overview -->
+            {% if chapters %}
+            <section class="chapters-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-book-open"></i>
+                        {% if current_user.is_super_admin %}
+                            {{ t.all_chapters }}
+                        {% else %}
+                            {{ t.chapter }}
+                        {% endif %}
+                    </h2>
+                    <a href="{{ url_for('manage_chapters', lang=lang) }}" class="btn btn-outline">
+                        <i class="fas fa-cog"></i>
+                        {{ t.manage_slides }}
+                    </a>
+                </div>
+
+                <div class="chapters-grid">
+                    {% for chapter_data in chapters %}
+                    <div class="chapter-card">
+                        <div class="chapter-header">
+                            <div class="chapter-number">{{ chapter_data.chapter.order }}</div>
+                            <h3 class="chapter-title">{{ chapter_data.chapter.get_title(lang) }}</h3>
+                            <p class="chapter-desc">{{ chapter_data.chapter.get_description(lang) }}</p>
+                        </div>
+
+                        <div class="chapter-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-images"></i>
+                                <span>{{ chapter_data.slides_count }} slides</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ chapter_data.total_views }} views</span>
+                            </div>
+                        </div>
+
+                        <div class="chapter-actions">
+                            <a href="{{ url_for('manage_slides', lang=lang, chapter_id=chapter_data.chapter.id) }}" class="btn btn-primary">
+                                <i class="fas fa-edit"></i>
+                                {{ t.manage_slides }}
+                            </a>
+                            <a href="{{ url_for('chapter', lang=lang, chapter_id=chapter_data.chapter.id) }}" class="btn btn-outline">
+                                <i class="fas fa-eye"></i>
+                                {{ t.view_chapter }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Recent Activity -->
+            {% if recent_activities %}
+            <section class="recent-activity">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-history"></i>
+                        {{ t.recent_activity }}
+                    </h2>
+                </div>
+
+                <div class="activity-list">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon {{ activity.action }}">
+                            <i class="fas fa-{% if activity.action == 'create' %}plus{% elif activity.action == 'edit' %}edit{% elif activity.action == 'delete' %}trash{% else %}eye{% endif %}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-description">
+                                {{ activity.description or (activity.action | title + ' ' + activity.target_type + ' #' + activity.target_id | string) }}
+                            </div>
+                            <div class="activity-time">
+                                {{ activity.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Real-time dashboard updates
+        function updateDashboardStats() {
+            fetch(`/api/{{ lang }}/dashboard/stats`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total-chapters').textContent = data.total_chapters;
+                    document.getElementById('total-slides').textContent = data.total_slides;
+                    document.getElementById('total-users').textContent = data.total_users;
+                    document.getElementById('activity-percentage').textContent = data.activity_percentage + '%';
+                })
+                .catch(error => console.error('Error updating stats:', error));
+        }
+
+        // Export data function
+        function exportData() {
+            const btn = event.target.closest('.quick-action-btn');
+            btn.classList.add('loading');
+
+            fetch(`/api/{{ lang }}/export/data`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Create and download JSON file
+                        const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `biology_system_export_${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+
+                        // Show success message
+                        showFlashMessage('success', data.message);
+                    } else {
+                        showFlashMessage('error', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showFlashMessage('error', '{{ t.error_occurred }}');
+                })
+                .finally(() => {
+                    btn.classList.remove('loading');
+                });
+        }
+
+        // Show flash message
+        function showFlashMessage(type, message) {
+            const flashContainer = document.querySelector('.flash-messages') || createFlashContainer();
+            const flashMessage = document.createElement('div');
+            flashMessage.className = `flash-message ${type}`;
+            flashMessage.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                <span>${message}</span>
+            `;
+            flashContainer.appendChild(flashMessage);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                flashMessage.remove();
+            }, 5000);
+        }
+
+        function createFlashContainer() {
+            const container = document.createElement('div');
+            container.className = 'flash-messages';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // Auto-refresh dashboard stats every 30 seconds
+        setInterval(updateDashboardStats, 30000);
+
+        // Auto-remove flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateX(100%)';
+                    setTimeout(() => message.remove(), 300);
+                }, 5000);
+            });
+        });
+
+        // Click outside to close sidebar on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileBtn = document.querySelector('.mobile-menu-btn');
+
+            if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
+                if (!sidebar.contains(event.target) && !mobileBtn.contains(event.target)) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        });
+
+        // Smooth animations on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.stat-card, .chapter-card, .quick-action-btn');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

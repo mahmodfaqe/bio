@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - Manage Study Materials</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #1e40af;
+            --secondary-teal: #0891b2;
+            --accent-emerald: #059669;
+            --warm-gold: #f59e0b;
+            --light-gray: #f8fafc;
+            --dark-text: #1e293b;
+            --medium-gray: #64748b;
+            --success-green: #10b981;
+            --error-red: #ef4444;
+            --warning-orange: #f97316;
+            --border-color: #e2e8f0;
+            --soft-blue: #dbeafe;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            color: var(--dark-text);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-info h1 {
+            font-size: 2.5rem;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-info .chapter-info {
+            color: var(--medium-gray);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--soft-blue);
+            border-radius: 12px;
+            min-width: 120px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .stat-label {
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+
+        .flash-message {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+
+        .flash-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-red);
+            border-left: 4px solid var(--error-red);
+        }
+
+        .flash-message.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-green);
+            border-left: 4px solid var(--success-green);
+        }
+
+        /* Action Bar */
+        .action-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medium-gray);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .filter-select {
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: var(--dark-text);
+            cursor: pointer;
+        }
+
+        /* Slides Grid */
+        .slides-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .slides-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .slides-title {
+            font-size: 1.5rem;
+            color: var(--dark-text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .select-all-checkbox {
+            margin-right: 0.5rem;
+        }
+
+        .slides-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .slide-card {
+            background: var(--light-gray);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .slide-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .slide-card.selected {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.2);
+        }
+
+        .slide-content {
+            display: grid;
+            grid-template-columns: 150px 1fr auto;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            align-items: center;
+        }
+
+        .slide-image {
+            width: 150px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+            overflow: hidden;
+        }
+
+        .slide-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .slide-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .slide-checkbox {
+            margin: 0;
+        }
+
+        .slide-order {
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .slide-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .slide-titles {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .slide-title.english {
+            color: var(--dark-text);
+        }
+
+        .slide-title.kurdish {
+            color: var(--medium-gray);
+            font-size: 1rem;
+        }
+
+        .slide-meta {
+            display: flex;
+            gap: 1.5rem;
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .slide-preview {
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-top: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .slide-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .slide-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--medium-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-green);
+        }
+
+        .status-dot.inactive {
+            background: var(--error-red);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            color: white;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-green), var(--accent-emerald));
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            background: var(--warning-orange);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--error-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--light-gray);
+            color: var(--medium-gray);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+            color: var(--dark-text);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            min-width: auto;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-text);
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 2rem;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--dark-text);
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--medium-gray);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--light-gray);
+            color: var(--dark-text);
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        /* Drag and Drop Reordering */
+        .slide-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .slide-card.drag-over {
+            border-top: 3px solid var(--primary-blue);
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .flash-message {
+            border-left: none;
+            border-right: 4px solid;
+        }
+
+        [dir="rtl"] .search-wrapper i {
+            left: auto;
+            right: 0.75rem;
+        }
+
+        [dir="rtl"] .search-input {
+            padding-left: 1rem;
+            padding-right: 2.5rem;
+        }
+
+        [dir="rtl"] .slide-content {
+            grid-template-columns: auto 1fr 150px;
+        }
+
+        [dir="rtl"] .slide-actions {
+            align-items: flex-start;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .slide-content {
+                grid-template-columns: 120px 1fr auto;
+            }
+
+            .slide-image {
+                width: 120px;
+                height: 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-stats {
+                justify-content: space-around;
+            }
+
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-section {
+                min-width: auto;
+            }
+
+            .slide-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .slide-image {
+                width: 100%;
+                height: 200px;
+                margin: 0 auto;
+            }
+
+            .slide-actions {
+                align-items: center;
+            }
+
+            .action-buttons {
+                justify-content: center;
+            }
+
+            .modal-content {
+                margin: 1rem;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .slides-container {
+                padding: 1rem;
+            }
+
+            .header-info h1 {
+                font-size: 2rem;
+            }
+
+            .slide-content {
+                padding: 1rem;
+            }
+
+            .header-stats {
+                gap: 1rem;
+            }
+
+            .stat-item {
+                min-width: 100px;
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>
+                        <i class="fas fa-microscope"></i>
+                        {{ chapter.get_title(lang) }}
+                    </h1>
+                    <p class="chapter-info">
+                        <i class="fas fa-book"></i>
+                        Chapter {{ chapter.order }} - Study Materials Management
+                    </p>
+                    <div class="header-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">{{ slides|length }}</div>
+                            <div class="stat-label">Total Slides</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ chapter.get_total_views() }}</div>
+                            <div class="stat-label">Total Views</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ slides|selectattr("is_active")|list|length }}</div>
+                            <div class="stat-label">Active</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/{{ lang }}/admin/slide/add" class="btn btn-success">
+                        <i class="fas fa-plus"></i>
+                        Add New Slide
+                    </a>
+                    <a href="/{{ lang }}/admin/dashboard" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+                <i class="fas fa-{% if category == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="search-input" id="searchInput"
+                           placeholder="Search slides by title or content...">
+                </div>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Slides</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                </select>
+                <select class="filter-select" id="sortOrder">
+                    <option value="order_asc">Order (Ascending)</option>
+                    <option value="order_desc">Order (Descending)</option>
+                    <option value="title_asc">Title (A-Z)</option>
+                    <option value="title_desc">Title (Z-A)</option>
+                    <option value="created_desc">Newest First</option>
+                    <option value="created_asc">Oldest First</option>
+                    <option value="views_desc">Most Viewed</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Slides Container -->
+        <div class="slides-container">
+            <div class="slides-header">
+                <h2 class="slides-title">
+                    <i class="fas fa-images"></i>
+                    Study Materials
+                    <span style="color: var(--medium-gray); font-size: 1rem; font-weight: normal;">
+                        ({{ slides|length }} total)
+                    </span>
+                </h2>
+                <div class="bulk-actions">
+                    <input type="checkbox" id="selectAll" class="select-all-checkbox">
+                    <label for="selectAll" style="margin-right: 1rem; color: var(--medium-gray);">Select All</label>
+                    <button class="btn btn-sm btn-warning" id="bulkReorderBtn" disabled>
+                        <i class="fas fa-sort"></i>
+                        Reorder
+                    </button>
+                    <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" disabled>
+                        <i class="fas fa-trash"></i>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+
+            <div class="slides-grid" id="slidesGrid">
+                {% if slides %}
+                {% for slide in slides %}
+                <div class="slide-card" data-slide-id="{{ slide.id }}" data-slide-order="{{ slide.order }}" draggable="true">
+                    <div class="slide-content">
+                        <div class="slide-image">
+                            {% if slide.get_image_url() %}
+                            <img src="{{ slide.get_thumbnail_url() or slide.get_image_url() }}"
+                                 alt="{{ slide.get_title(lang) }}">
+                            {% else %}
+                            <i class="fas fa-image" style="font-size: 2rem;"></i>
+                            {% endif %}
+                        </div>
+
+                        <div class="slide-info">
+                            <div class="slide-header">
+                                <input type="checkbox" class="slide-checkbox" value="{{ slide.id }}">
+                                <div class="slide-order">{{ slide.order }}</div>
+                            </div>
+
+                            <div class="slide-titles">
+                                <h3 class="slide-title english">{{ slide.title_en }}</h3>
+                                <h4 class="slide-title kurdish">{{ slide.title_ckb }}</h4>
+                            </div>
+
+                            <div class="slide-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-eye"></i>
+                                    {{ slide.view_count }} views
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    {{ slide.updated_at.strftime('%Y-%m-%d') }}
+                                </div>
+                                {% if slide.components %}
+                                <div class="meta-item">
+                                    <i class="fas fa-puzzle-piece"></i>
+                                    Has Components
+                                </div>
+                                {% endif %}
+                                {% if slide.location %}
+                                <div class="meta-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Has Location
+                                </div>
+                                {% endif %}
+                                {% if slide.functions %}
+                                <div class="meta-item">
+                                    <i class="fas fa-cogs"></i>
+                                    Has Functions
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if slide.get_content(lang) %}
+                            <div class="slide-preview">
+                                {{ slide.get_content(lang)[:100] }}{% if slide.get_content(lang)|length > 100 %}...{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="slide-actions">
+                            <div class="slide-status">
+                                <div class="status-dot {{ 'active' if slide.is_active else 'inactive' }}"></div>
+                                {{ 'Active' if slide.is_active else 'Inactive' }}
+                            </div>
+
+                            <div class="action-buttons">
+                                <a href="/{{ lang }}/slide/{{ slide.id }}" class="btn btn-sm btn-outline" target="_blank" title="Preview">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="/{{ lang }}/admin/slide/{{ slide.id }}/edit" class="btn btn-sm btn-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger delete-slide-btn" data-slide-id="{{ slide.id }}"
+                                        data-slide-title="{{ slide.get_title(lang) }}" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-images"></i>
+                    <h3>No Study Materials Yet</h3>
+                    <p>Start building your chapter by adding study slides with images and detailed content.</p>
+                    <a href="/{{ lang }}/admin/slide/add" class="btn btn-success">
+                        <i class="fas fa-plus"></i>
+                        Add Your First Slide
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Delete</h3>
+                <button type="button" class="modal-close" id="closeDeleteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this slide?</p>
+                <p><strong id="deleteSlideTitle"></strong></p>
+                <p style="color: var(--error-red); font-size: 0.9rem; margin-top: 1rem;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="cancelDelete">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash"></i>
+                    Delete Slide
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Delete Modal -->
+    <div class="modal" id="bulkDeleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Bulk Delete</h3>
+                <button type="button" class="modal-close" id="closeBulkDeleteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> selected slides?</p>
+                <p style="color: var(--error-red); font-size: 0.9rem; margin-top: 1rem;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="cancelBulkDelete">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmBulkDelete">
+                    <i class="fas fa-trash"></i>
+                    Delete Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedSlides = new Set();
+        let currentDeleteSlideId = null;
+        let allSlides = [];
+        let filteredSlides = [];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            setupEventListeners();
+            setupDragAndDrop();
+            loadSlideData();
+        });
+
+        function initializePage() {
+            // Get all slide cards
+            const slideCards = document.querySelectorAll('.slide-card');
+            allSlides = Array.from(slideCards).map(card => ({
+                element: card,
+                id: card.dataset.slideId,
+                order: parseInt(card.dataset.slideOrder),
+                title: card.querySelector('.slide-title.english').textContent.toLowerCase(),
+                content: card.querySelector('.slide-preview')?.textContent.toLowerCase() || '',
+                isActive: card.querySelector('.status-dot').classList.contains('active'),
+                createdDate: card.querySelector('.meta-item .fas.fa-calendar').parentElement.textContent.trim(),
+                views: parseInt(card.querySelector('.meta-item .fas.fa-eye').parentElement.textContent.match(/\d+/)?.[0] || 0)
+            }));
+
+            filteredSlides = [...allSlides];
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', debounce(handleSearch, 300));
+
+            // Filter functionality
+            const statusFilter = document.getElementById('statusFilter');
+            const sortOrder = document.getElementById('sortOrder');
+            statusFilter.addEventListener('change', handleFilter);
+            sortOrder.addEventListener('change', handleSort);
+
+            // Select all checkbox
+            const selectAllCheckbox = document.getElementById('selectAll');
+            selectAllCheckbox.addEventListener('change', handleSelectAll);
+
+            // Individual slide checkboxes
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('slide-checkbox')) {
+                    handleSlideSelection(e.target);
+                }
+            });
+
+            // Bulk actions
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const bulkReorderBtn = document.getElementById('bulkReorderBtn');
+            bulkDeleteBtn.addEventListener('click', handleBulkDelete);
+            bulkReorderBtn.addEventListener('click', handleBulkReorder);
+
+            // Delete slide buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.delete-slide-btn')) {
+                    const btn = e.target.closest('.delete-slide-btn');
+                    const slideId = btn.dataset.slideId;
+                    const slideTitle = btn.dataset.slideTitle;
+                    showDeleteModal(slideId, slideTitle);
+                }
+            });
+
+            // Modal event listeners
+            setupModalEventListeners();
+        }
+
+        function setupModalEventListeners() {
+            // Delete modal
+            const deleteModal = document.getElementById('deleteModal');
+            const closeDeleteModal = document.getElementById('closeDeleteModal');
+            const cancelDelete = document.getElementById('cancelDelete');
+            const confirmDelete = document.getElementById('confirmDelete');
+
+            closeDeleteModal.addEventListener('click', hideDeleteModal);
+            cancelDelete.addEventListener('click', hideDeleteModal);
+            confirmDelete.addEventListener('click', confirmDeleteSlide);
+
+            // Bulk delete modal
+            const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+            const closeBulkDeleteModal = document.getElementById('closeBulkDeleteModal');
+            const cancelBulkDelete = document.getElementById('cancelBulkDelete');
+            const confirmBulkDelete = document.getElementById('confirmBulkDelete');
+
+            closeBulkDeleteModal.addEventListener('click', hideBulkDeleteModal);
+            cancelBulkDelete.addEventListener('click', hideBulkDeleteModal);
+            confirmBulkDelete.addEventListener('click', confirmBulkDeleteSlides);
+
+            // Close modals on backdrop click
+            deleteModal.addEventListener('click', function(e) {
+                if (e.target === deleteModal) hideDeleteModal();
+            });
+
+            bulkDeleteModal.addEventListener('click', function(e) {
+                if (e.target === bulkDeleteModal) hideBulkDeleteModal();
+            });
+        }
+
+        function setupDragAndDrop() {
+            const slidesGrid = document.getElementById('slidesGrid');
+
+            slidesGrid.addEventListener('dragstart', handleDragStart);
+            slidesGrid.addEventListener('dragover', handleDragOver);
+            slidesGrid.addEventListener('dragenter', handleDragEnter);
+            slidesGrid.addEventListener('dragleave', handleDragLeave);
+            slidesGrid.addEventListener('drop', handleDrop);
+            slidesGrid.addEventListener('dragend', handleDragEnd);
+        }
+
+        // Search functionality
+        function handleSearch(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+
+            if (searchTerm === '') {
+                filteredSlides = [...allSlides];
+            } else {
+                filteredSlides = allSlides.filter(slide =>
+                    slide.title.includes(searchTerm) ||
+                    slide.content.includes(searchTerm)
+                );
+            }
+
+            updateSlideDisplay();
+        }
+
+        // Filter functionality
+        function handleFilter() {
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            if (statusFilter === '') {
+                filteredSlides = [...allSlides];
+            } else if (statusFilter === 'active') {
+                filteredSlides = allSlides.filter(slide => slide.isActive);
+            } else if (statusFilter === 'inactive') {
+                filteredSlides = allSlides.filter(slide => !slide.isActive);
+            }
+
+            // Reapply search if there's a search term
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (searchTerm) {
+                filteredSlides = filteredSlides.filter(slide =>
+                    slide.title.includes(searchTerm) ||
+                    slide.content.includes(searchTerm)
+                );
+            }
+
+            updateSlideDisplay();
+        }
+
+        // Sort functionality
+        function handleSort() {
+            const sortOrder = document.getElementById('sortOrder').value;
+
+            filteredSlides.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'order_asc':
+                        return a.order - b.order;
+                    case 'order_desc':
+                        return b.order - a.order;
+                    case 'title_asc':
+                        return a.title.localeCompare(b.title);
+                    case 'title_desc':
+                        return b.title.localeCompare(a.title);
+                    case 'views_desc':
+                        return b.views - a.views;
+                    case 'created_desc':
+                        return new Date(b.createdDate) - new Date(a.createdDate);
+                    case 'created_asc':
+                        return new Date(a.createdDate) - new Date(b.createdDate);
+                    default:
+                        return a.order - b.order;
+                }
+            });
+
+            updateSlideDisplay();
+        }
+
+        function updateSlideDisplay() {
+            const slidesGrid = document.getElementById('slidesGrid');
+
+            // Hide all slides first
+            allSlides.forEach(slide => {
+                slide.element.style.display = 'none';
+            });
+
+            // Show filtered slides
+            filteredSlides.forEach((slide, index) => {
+                slide.element.style.display = 'block';
+                slide.element.style.order = index;
+            });
+
+            // Update empty state
+            if (filteredSlides.length === 0 && allSlides.length > 0) {
+                showNoResultsMessage();
+            } else {
+                hideNoResultsMessage();
+            }
+        }
+
+        function showNoResultsMessage() {
+            let noResults = document.getElementById('noResults');
+            if (!noResults) {
+                noResults = document.createElement('div');
+                noResults.id = 'noResults';
+                noResults.className = 'empty-state';
+                noResults.innerHTML = `
+                    <i class="fas fa-search"></i>
+                    <h3>No Results Found</h3>
+                    <p>Try adjusting your search terms or filters.</p>
+                    <button class="btn btn-outline" onclick="clearFilters()">
+                        <i class="fas fa-times"></i>
+                        Clear Filters
+                    </button>
+                `;
+                document.getElementById('slidesGrid').appendChild(noResults);
+            }
+            noResults.style.display = 'block';
+        }
+
+        function hideNoResultsMessage() {
+            const noResults = document.getElementById('noResults');
+            if (noResults) {
+                noResults.style.display = 'none';
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('sortOrder').value = 'order_asc';
+            filteredSlides = [...allSlides];
+            updateSlideDisplay();
+        }
+
+        // Selection functionality
+        function handleSelectAll(e) {
+            const isChecked = e.target.checked;
+            const checkboxes = document.querySelectorAll('.slide-checkbox');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                if (isChecked) {
+                    selectedSlides.add(checkbox.value);
+                } else {
+                    selectedSlides.delete(checkbox.value);
+                }
+            });
+
+            updateBulkActionButtons();
+        }
+
+        function handleSlideSelection(checkbox) {
+            if (checkbox.checked) {
+                selectedSlides.add(checkbox.value);
+            } else {
+                selectedSlides.delete(checkbox.value);
+            }
+
+            updateSelectAllState();
+            updateBulkActionButtons();
+        }
+
+        function updateSelectAllState() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('.slide-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.slide-checkbox:checked');
+
+            if (checkedCheckboxes.length === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (checkedCheckboxes.length === allCheckboxes.length) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+                selectAllCheckbox.checked = false;
+            }
+        }
+
+        function updateBulkActionButtons() {
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const bulkReorderBtn = document.getElementById('bulkReorderBtn');
+            const hasSelected = selectedSlides.size > 0;
+
+            bulkDeleteBtn.disabled = !hasSelected;
+            bulkReorderBtn.disabled = selectedSlides.size < 2;
+        }
+
+        // Delete functionality
+        function showDeleteModal(slideId, slideTitle) {
+            currentDeleteSlideId = slideId;
+            document.getElementById('deleteSlideTitle').textContent = slideTitle;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            currentDeleteSlideId = null;
+        }
+
+        async function confirmDeleteSlide() {
+            if (!currentDeleteSlideId) return;
+
+            const confirmBtn = document.getElementById('confirmDelete');
+            const originalText = confirmBtn.innerHTML;
+
+            confirmBtn.classList.add('loading');
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+            try {
+                const response = await fetch(`/{{ lang }}/admin/slide/${currentDeleteSlideId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Remove slide from DOM
+                    const slideCard = document.querySelector(`[data-slide-id="${currentDeleteSlideId}"]`);
+                    if (slideCard) {
+                        slideCard.remove();
+                    }
+
+                    // Update data arrays
+                    allSlides = allSlides.filter(slide => slide.id !== currentDeleteSlideId);
+                    filteredSlides = filteredSlides.filter(slide => slide.id !== currentDeleteSlideId);
+
+                    // Remove from selected if selected
+                    selectedSlides.delete(currentDeleteSlideId);
+                    updateBulkActionButtons();
+                    updateSelectAllState();
+
+                    showSuccessMessage(result.message || 'Slide deleted successfully');
+                    hideDeleteModal();
+
+                    // Update stats
+                    updatePageStats();
+                } else {
+                    showErrorMessage(result.message || 'Failed to delete slide');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showErrorMessage('An error occurred while deleting the slide');
+            } finally {
+                confirmBtn.classList.remove('loading');
+                confirmBtn.innerHTML = originalText;
+            }
+        }
+
+        // Bulk delete functionality
+        function handleBulkDelete() {
+            if (selectedSlides.size === 0) return;
+
+            document.getElementById('bulkDeleteCount').textContent = selectedSlides.size;
+            document.getElementById('bulkDeleteModal').classList.add('show');
+        }
+
+        function hideBulkDeleteModal() {
+            document.getElementById('bulkDeleteModal').classList.remove('show');
+        }
+
+        async function confirmBulkDeleteSlides() {
+            const confirmBtn = document.getElementById('confirmBulkDelete');
+            const originalText = confirmBtn.innerHTML;
+
+            confirmBtn.classList.add('loading');
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+            try {
+                const deletePromises = Array.from(selectedSlides).map(slideId =>
+                    fetch(`/{{ lang }}/admin/slide/${slideId}/delete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                );
+
+                const responses = await Promise.all(deletePromises);
+                const results = await Promise.all(responses.map(r => r.json()));
+
+                const successful = results.filter(r => r.success);
+                const failed = results.filter(r => !r.success);
+
+                // Remove successful deletions from DOM
+                selectedSlides.forEach(slideId => {
+                    const slideCard = document.querySelector(`[data-slide-id="${slideId}"]`);
+                    if (slideCard) {
+                        slideCard.remove();
+                    }
+                });
+
+                // Update data arrays
+                const deletedIds = Array.from(selectedSlides);
+                allSlides = allSlides.filter(slide => !deletedIds.includes(slide.id));
+                filteredSlides = filteredSlides.filter(slide => !deletedIds.includes(slide.id));
+
+                // Clear selections
+                selectedSlides.clear();
+                updateBulkActionButtons();
+                updateSelectAllState();
+
+                if (successful.length > 0) {
+                    showSuccessMessage(`${successful.length} slides deleted successfully`);
+                }
+
+                if (failed.length > 0) {
+                    showErrorMessage(`${failed.length} slides failed to delete`);
+                }
+
+                hideBulkDeleteModal();
+                updatePageStats();
+            } catch (error) {
+                console.error('Bulk delete error:', error);
+                showErrorMessage('An error occurred during bulk delete');
+            } finally {
+                confirmBtn.classList.remove('loading');
+                confirmBtn.innerHTML = originalText;
+            }
+        }
+
+        // Drag and drop functionality
+        let draggedElement = null;
+
+        function handleDragStart(e) {
+            if (!e.target.classList.contains('slide-card')) return;
+
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.outerHTML);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            if (e.target.classList.contains('slide-card') && e.target !== draggedElement) {
+                e.target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('slide-card')) {
+                e.target.classList.remove('drag-over');
+            }
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+
+            if (!e.target.classList.contains('slide-card') || e.target === draggedElement) {
+                return;
+            }
+
+            const draggedId = draggedElement.dataset.slideId;
+            const targetId = e.target.dataset.slideId;
+            const draggedOrder = parseInt(draggedElement.dataset.slideOrder);
+            const targetOrder = parseInt(e.target.dataset.slideOrder);
+
+            try {
+                // Update order in backend
+                const response = await fetch(`/{{ lang }}/admin/slide/${draggedId}/reorder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        new_order: targetOrder
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update DOM order
+                    const slidesGrid = document.getElementById('slidesGrid');
+                    const allCards = Array.from(slidesGrid.children);
+
+                    // Reorder elements
+                    if (draggedOrder < targetOrder) {
+                        e.target.after(draggedElement);
+                    } else {
+                        e.target.before(draggedElement);
+                    }
+
+                    showSuccessMessage('Slide order updated successfully');
+                } else {
+                    showErrorMessage('Failed to update slide order');
+                }
+            } catch (error) {
+                console.error('Reorder error:', error);
+                showErrorMessage('An error occurred while reordering');
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (e.target.classList.contains('slide-card')) {
+                e.target.classList.remove('dragging');
+
+                // Remove drag-over class from all cards
+                document.querySelectorAll('.slide-card').forEach(card => {
+                    card.classList.remove('drag-over');
+                });
+            }
+
+            draggedElement = null;
+        }
+
+        // Bulk reorder functionality
+        function handleBulkReorder() {
+            // This would open a modal for bulk reordering
+            showInfoMessage('Bulk reordering feature coming soon! You can drag and drop individual slides for now.');
+        }
+
+        // Utility functions
+        function updatePageStats() {
+            // Update the stats in the header
+            const totalSlides = document.querySelectorAll('.slide-card').length;
+            const activeSlides = document.querySelectorAll('.slide-card .status-dot.active').length;
+
+            // Update stats display (if elements exist)
+            const totalStat = document.querySelector('.stat-item .stat-number');
+            const activeStat = document.querySelectorAll('.stat-item .stat-number')[2];
+
+            if (totalStat) totalStat.textContent = totalSlides;
+            if (activeStat) activeStat.textContent = activeSlides;
+        }
+
+        function loadSlideData() {
+            // This would be called if we need to load slide data via AJAX
+            // For now, we're using server-rendered data
+        }
+
+        function showSuccessMessage(message) {
+            createFlashMessage('success', message);
+        }
+
+        function showErrorMessage(message) {
+            createFlashMessage('error', message);
+        }
+
+        function showInfoMessage(message) {
+            createFlashMessage('info', message);
+        }
+
+        function createFlashMessage(type, message) {
+            const flashContainer = document.querySelector('.flash-messages') || createFlashContainer();
+
+            const flashMessage = document.createElement('div');
+            flashMessage.className = `flash-message ${type}`;
+            flashMessage.innerHTML = `
+                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+
+            flashContainer.appendChild(flashMessage);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                flashMessage.remove();
+            }, 5000);
+        }
+
+        function createFlashContainer() {
+            const container = document.createElement('div');
+            container.className = 'flash-messages';
+            document.querySelector('.container').insertBefore(container, document.querySelector('.action-bar'));
+            return container;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + A to select all
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault();
+                document.getElementById('selectAll').checked = true;
+                handleSelectAll({ target: document.getElementById('selectAll') });
+            }
+
+            // Delete key to delete selected
+            if (e.key === 'Delete' && selectedSlides.size > 0) {
+                e.preventDefault();
+                handleBulkDelete();
+            }
+
+            // Escape key to close modals
+            if (e.key === 'Escape') {
+                const openModal = document.querySelector('.modal.show');
+                if (openModal) {
+                    openModal.classList.remove('show');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

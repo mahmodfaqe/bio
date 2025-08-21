@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - {{ t.chapters_title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --cell-teal: #2a9d8f;
+            --micro-gold: #f4a261;
+            --dna-purple: #6a4c93;
+            --plant-green: #52b788;
+            --blood-red: #c9184a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+            background-attachment: fixed;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(244, 162, 97, 0.2);
+        }
+
+        .navbar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-nav {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.15);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 4rem 3rem;
+            border-radius: 2rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            margin-bottom: 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal), var(--dna-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-subtitle {
+            font-size: 1.4rem;
+            color: var(--secondary);
+            margin-bottom: 2.5rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 1.1rem;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            color: white;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(244, 162, 97, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--secondary);
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        /* Chapters Grid */
+        .chapters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .chapter-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(244, 162, 97, 0.15);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .chapter-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .chapter-card:hover::before {
+            left: 100%;
+        }
+
+        .chapter-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .chapter-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1.5rem;
+        }
+
+        .chapter-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chapter-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .chapter-title-section {
+            flex: 1;
+        }
+
+        .chapter-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .chapter-order {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .chapter-description {
+            color: var(--secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            font-size: 1.05rem;
+        }
+
+        .chapter-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1.5rem;
+            border-top: 2px solid #f1f5f9;
+            font-size: 0.95rem;
+        }
+
+        .chapter-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        .chapter-stat i {
+            color: var(--primary);
+        }
+
+        .view-btn {
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .view-btn:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 4rem 3rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 2px dashed #d1d5db;
+        }
+
+        .empty-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin: 0 auto 2rem;
+        }
+
+        .empty-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+
+        .empty-message {
+            color: var(--secondary);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        .page-footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 3rem 2rem 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-top: 4rem;
+            border: 1px solid rgba(244, 162, 97, 0.15);
+        }
+
+        .footer-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .footer-link:hover {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .footer-text {
+            color: var(--secondary);
+            font-size: 0.95rem;
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .chapter-header {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .chapter-stats {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .navbar-container {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .footer-links {
+            direction: rtl;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .chapters-grid {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 2rem 1rem;
+            }
+
+            .navbar-container {
+                padding: 0 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .navbar-nav {
+                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero-section {
+                padding: 3rem 2rem;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .chapters-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .chapter-card {
+                padding: 2rem;
+            }
+
+            .chapter-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+
+            .chapter-title {
+                font-size: 1.4rem;
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .stat-item {
+                padding: 1.5rem;
+            }
+
+            .chapter-stats {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .chapter-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .chapter-title-section {
+                text-align: center;
+            }
+
+            .chapter-stats {
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('index', lang=lang) }}" class="navbar-brand">
+                <i class="fas fa-microscope"></i>
+                {{ t.brand }}
+            </a>
+            <div class="navbar-nav">
+                <a href="{{ url_for('index', lang=lang) }}" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    {{ t.nav_home }}
+                </a>
+                <a href="{{ url_for('chapters', lang=lang) }}" class="nav-link active">
+                    <i class="fas fa-book-open"></i>
+                    {{ t.nav_chapters }}
+                </a>
+                {% if lang == 'en' %}
+                    <a href="{{ url_for('chapters', lang='ckb') }}" class="nav-link">
+                        <i class="fas fa-language"></i>
+                        کوردی
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('chapters', lang='en') }}" class="nav-link">
+                        <i class="fas fa-language"></i>
+                        English
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <i class="fas fa-book-open"></i>
+                    {{ t.chapters_title }}
+                </h1>
+                <p class="hero-subtitle">
+                    {{ t.chapters_intro }}
+                </p>
+                <a href="{{ url_for('index', lang=lang) }}" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    {{ t.back_home }}
+                </a>
+            </div>
+        </div>
+
+        {% if chapters %}
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-number">{{ chapters|length }}</div>
+                    <div class="stat-label">{{ t.total_chapters }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-number">{{ chapters|sum(attribute='slides_count') or 0 }}</div>
+                    <div class="stat-label">{{ t.total_slides }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-number">{{ chapters|sum(attribute='total_views') or 0 }}</div>
+                    <div class="stat-label">{{ t.activity }}</div>
+                </div>
+            </div>
+
+            <!-- Chapters Grid -->
+            <div class="chapters-grid">
+                {% for chapter_data in chapters %}
+                    {% set chapter = chapter_data.chapter %}
+                    <a href="{{ url_for('chapter', lang=lang, chapter_id=chapter.id) }}" class="chapter-card">
+                        <div class="chapter-header">
+                            <div class="chapter-icon">
+                                <i class="{{ chapter.icon }}"></i>
+                            </div>
+                            <div class="chapter-title-section">
+                                <h3 class="chapter-title">{{ chapter.get_title(lang) }}</h3>
+                                <span class="chapter-order">{{ t.chapter }} {{ chapter.order }}</span>
+                            </div>
+                        </div>
+
+                        <p class="chapter-description">
+                            {{ chapter.get_description(lang) }}
+                        </p>
+
+                        <div class="chapter-stats">
+                            <div class="chapter-stat">
+                                <i class="fas fa-file-alt"></i>
+                                <span>{{ chapter_data.slides_count }} {% if lang == 'ckb' %}سلايد{% else %}slides{% endif %}</span>
+                            </div>
+                            <div class="chapter-stat">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ chapter_data.total_views }} {% if lang == 'ckb' %}بینین{% else %}views{% endif %}</span>
+                            </div>
+                            <div class="view-btn">
+                                <i class="fas fa-arrow-right"></i>
+                                {{ t.view_chapter }}
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h2 class="empty-title">
+                    {% if lang == 'ckb' %}
+                        هێچ بابەتێک نییە
+                    {% else %}
+                        No Chapters Available
+                    {% endif %}
+                </h2>
+                <p class="empty-message">
+                    {% if lang == 'ckb' %}
+                        هێشتا هیچ بابەتێک زیاد نەکراوە. تکایە دواتر گەڕێنەوە.
+                    {% else %}
+                        No chapters have been added yet. Please check back later.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('index', lang=lang) }}" class="back-btn">
+                    <i class="fas fa-home"></i>
+                    {% if lang == 'ckb' %}گەڕانەوە بۆ سەرەکی{% else %}Back to Home{% endif %}
+                </a>
+            </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <footer class="page-footer">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="{{ url_for('index', lang=lang) }}" class="footer-link">
+                        <i class="fas fa-home"></i>
+                        {{ t.nav_home }}
+                    </a>
+                    <a href="{{ url_for('guide', lang=lang) }}" class="footer-link">
+                        <i class="fas fa-compass"></i>
+                        {{ t.nav_guide }}
+                    </a>
+                    {% if lang == 'en' %}
+                        <a href="{{ url_for('chapters', lang='ckb') }}" class="footer-link">
+                            <i class="fas fa-language"></i>
+                            کوردی
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('chapters', lang='en') }}" class="footer-link">
+                            <i class="fas fa-language"></i>
+                            English
+                        </a>
+                    {% endif %}
+                </div>
+                <p class="footer-text">
+                    © 2024 {{ t.footer_open_guide }}. {{ t.footer_rights }}.
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('{% if lang == "ckb" %}پەڕەی بابەتەکان ئامادەیە{% else %}Chapters page ready{% endif %}');
+
+            // Add loading states to chapter cards
+            document.querySelectorAll('.chapter-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    const viewBtn = this.querySelector('.view-btn');
+                    const originalContent = viewBtn.innerHTML;
+
+                    viewBtn.innerHTML = `
+                        <div class="loading"></div>
+                        {% if lang == 'ckb' %}بارکردن...{% else %}Loading...{% endif %}
+                    `;
+
+                    // Reset after a delay if navigation fails
+                    setTimeout(() => {
+                        viewBtn.innerHTML = originalContent;
+                    }, 5000);
+                });
+            });
+
+            // Add smooth reveal animation for cards
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Initially hide cards and observe them
+            document.querySelectorAll('.chapter-card').forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+                observer.observe(card);
+            });
+
+            // Reveal stats with animation
+            document.querySelectorAll('.stat-item').forEach((stat, index) => {
+                stat.style.opacity = '0';
+                stat.style.transform = 'translateY(30px)';
+                stat.style.transition = `opacity 0.6s ease ${index * 0.2}s, transform 0.6s ease ${index * 0.2}s`;
+
+                setTimeout(() => {
+                    stat.style.opacity = '1';
+                    stat.style.transform = 'translateY(0)';
+                }, 300 + (index * 200));
+            });
+        });
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const cards = Array.from(document.querySelectorAll('.chapter-card'));
+                const focusedIndex = cards.findIndex(card => card === document.activeElement);
+
+                if (e.key === 'ArrowDown') {
+                    const nextIndex = focusedIndex < cards.length - 1 ? focusedIndex + 1 : 0;
+                    cards[nextIndex].focus();
+                } else {
+                    const prevIndex = focusedIndex > 0 ? focusedIndex - 1 : cards.length - 1;
+                    cards[prevIndex].focus();
+                }
+            }
+        });
+
+        // Make chapter cards focusable for accessibility
+        document.querySelectorAll('.chapter-card').forEach(card => {
+            card.setAttribute('tabindex', '0');
+
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

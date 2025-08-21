@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - {% if lang == 'ckb' %}بەڕێوەبردنی بابەتەکان{% else %}Manage Chapters{% endif %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --cell-teal: #2a9d8f;
+            --micro-gold: #f4a261;
+            --dna-purple: #6a4c93;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+            padding: 2rem;
+            background-attachment: fixed;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            color: white;
+            box-shadow: 0 5px 15px rgba(100, 116, 139, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), var(--warning));
+            color: white;
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .content-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(244, 162, 97, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(248, 250, 252, 0.7);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .chapters-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chapter-card {
+            background: rgba(248, 250, 252, 0.7);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .chapter-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .chapter-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--cell-teal));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .chapter-content {
+            flex: 1;
+        }
+
+        .chapter-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chapter-description {
+            color: var(--secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .chapter-meta {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chapter-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .edit-btn {
+            background: var(--primary);
+        }
+
+        .delete-btn {
+            background: var(--danger);
+        }
+
+        .slides-btn {
+            background: var(--success);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .flash-messages {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1200;
+            max-width: 400px;
+        }
+
+        .flash-message {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideInLeft 0.4s ease;
+            border-left: 5px solid;
+            backdrop-filter: blur(10px);
+        }
+
+        .flash-message.success {
+            border-left-color: var(--success);
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .flash-message.error {
+            border-left-color: var(--danger);
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .flash-message.warning {
+            border-left-color: var(--warning);
+            color: var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .chapter-card {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .chapter-meta {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .flash-messages {
+            right: auto;
+            left: 2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .page-title {
+                font-size: 2rem;
+                justify-content: center;
+            }
+
+            .header-actions {
+                justify-content: center;
+            }
+
+            .content-container {
+                padding: 1.5rem;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .chapter-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .chapter-meta {
+                justify-content: center;
+            }
+
+            .chapter-actions {
+                justify-content: center;
+            }
+
+            .flash-messages {
+                right: 1rem;
+                left: 1rem;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-triangle{% elif category == 'warning' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-book"></i>
+                    {% if lang == 'ckb' %}بەڕێوەبردنی بابەتەکان{% else %}Manage Chapters{% endif %}
+                </h1>
+                <div class="header-actions">
+                    <a href="{{ url_for('admin_dashboard', lang=lang) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        {% if lang == 'ckb' %}گەڕانەوە{% else %}Back to Dashboard{% endif %}
+                    </a>
+                    {% if current_user.is_super_admin %}
+                    <a href="{{ url_for('add_chapter', lang=lang) }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        {% if lang == 'ckb' %}بابەتی نوێ{% else %}New Chapter{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Container -->
+        <div class="content-container">
+            <div class="content">
+                <!-- Statistics Cards -->
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ chapters|length }}</div>
+                        <div class="stat-label">
+                            <i class="fas fa-book"></i>
+                            {% if lang == 'ckb' %}کۆی بابەتەکان{% else %}Total Chapters{% endif %}
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_slides }}</div>
+                        <div class="stat-label">
+                            <i class="fas fa-images"></i>
+                            {% if lang == 'ckb' %}کۆی کەرەستەکان{% else %}Total Study Materials{% endif %}
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_views }}</div>
+                        <div class="stat-label">
+                            <i class="fas fa-eye"></i>
+                            {% if lang == 'ckb' %}کۆی بینینەکان{% else %}Total Views{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapters List -->
+                <div class="chapters-list">
+                    {% if chapters %}
+                        {% for chapter_data in chapters %}
+                        {% set chapter = chapter_data.chapter %}
+                        <div class="chapter-card" data-chapter-id="{{ chapter.id }}">
+                            <div class="chapter-icon">
+                                <i class="{{ chapter.icon }}"></i>
+                            </div>
+                            <div class="chapter-content">
+                                <div class="chapter-title">
+                                    {{ chapter.get_title(lang) }}
+                                    {% if chapter.order %}
+                                    <span class="order-badge" style="background: var(--primary); color: white; padding: 0.25rem 0.5rem; border-radius: 0.5rem; font-size: 0.8rem;">
+                                        #{{ chapter.order }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="chapter-description">
+                                    {{ chapter.get_description(lang) or (t.chapters_intro if lang == 'ckb' else 'Comprehensive coverage of essential biology topics.') }}
+                                </div>
+                                <div class="chapter-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-images"></i>
+                                        <span>{{ chapter_data.slides_count }} {% if lang == 'ckb' %}کەرەستە{% else %}materials{% endif %}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-eye"></i>
+                                        <span>{{ chapter_data.total_views }} {% if lang == 'ckb' %}بینین{% else %}views{% endif %}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>{{ chapter.updated_at.strftime('%Y-%m-%d') if chapter.updated_at else '' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chapter-actions">
+                                <a href="{{ url_for('manage_slides', lang=lang, chapter_id=chapter.id) }}" class="action-btn slides-btn" title="{% if lang == 'ckb' %}بەڕێوەبردنی کەرەستەکان{% else %}Manage Study Materials{% endif %}">
+                                    <i class="fas fa-images"></i>
+                                </a>
+                                <a href="{{ url_for('edit_chapter', lang=lang, chapter_id=chapter.id) }}" class="action-btn edit-btn" title="{% if lang == 'ckb' %}دەستکاری بابەت{% else %}Edit Chapter{% endif %}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if current_user.is_super_admin %}
+                                <button class="action-btn delete-btn" onclick="deleteChapter({{ chapter.id }}, '{{ chapter.get_title(lang) }}')" title="{% if lang == 'ckb' %}سڕینەوەی بابەت{% else %}Delete Chapter{% endif %}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-book-open"></i>
+                            <h3>{% if lang == 'ckb' %}هیچ بابەتێک بوونی نییە{% else %}No Chapters Found{% endif %}</h3>
+                            <p>{% if lang == 'ckb' %}هێشتا هیچ بابەتێک زیاد نەکراوە. دەستبکە بە زیادکردنی یەکەم بابەت!{% else %}No chapters have been added yet. Start by adding your first chapter!{% endif %}</p>
+                            {% if current_user.is_super_admin %}
+                            <a href="{{ url_for('add_chapter', lang=lang) }}" class="btn btn-primary" style="margin-top: 1.5rem;">
+                                <i class="fas fa-plus"></i>
+                                {% if lang == 'ckb' %}زیادکردنی بابەتی یەکەم{% else %}Add First Chapter{% endif %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Delete chapter function
+        function deleteChapter(chapterId, chapterTitle) {
+            const confirmMessage = '{{ t.delete_chapter if lang == "ckb" else "Are you sure you want to delete this chapter?" }}: ' + chapterTitle;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            fetch('{{ url_for("delete_chapter", lang=lang, chapter_id=0) }}'.replace('0', chapterId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('{{ t.success_deleted }}', 'success');
+                    // Remove the chapter card from the UI
+                    document.querySelector(`.chapter-card[data-chapter-id="${chapterId}"]`).remove();
+
+                    // Check if there are no chapters left and show empty state
+                    if (document.querySelectorAll('.chapter-card').length === 0) {
+                        document.querySelector('.chapters-list').innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-book-open"></i>
+                                <h3>{% if lang == 'ckb' %}هیچ بابەتێک بوونی نییە{% else %}No Chapters Found{% endif %}</h3>
+                                <p>{% if lang == 'ckb' %}هێشتا هیچ بابەتێک زیاد نەکراوە. دەستبکە بە زیادکردنی یەکەم بابەت!{% else %}No chapters have been added yet. Start by adding your first chapter!{% endif %}</p>
+                                {% if current_user.is_super_admin %}
+                                <a href="{{ url_for('add_chapter', lang=lang) }}" class="btn btn-primary" style="margin-top: 1.5rem;">
+                                    <i class="fas fa-plus"></i>
+                                    {% if lang == 'ckb' %}زیادکردنی بابەتی یەکەم{% else %}Add First Chapter{% endif %}
+                                </a>
+                                {% endif %}
+                            </div>
+                        `;
+                    }
+                } else {
+                    showAlert(data.message || '{{ t.error_occurred }}', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('{{ t.error_occurred }}', 'error');
+            });
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `flash-message ${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+            let container = document.querySelector('.flash-messages');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.body.appendChild(container);
+            }
+
+            container.appendChild(alertDiv);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Auto-hide existing flash messages
+        setTimeout(function() {
+            document.querySelectorAll('.flash-message').forEach(function(message) {
+                message.style.opacity = '0';
+                message.style.transform = 'translateX(100%)';
+                setTimeout(function() {
+                    if (message.parentNode) {
+                        message.parentNode.removeChild(message);
+                    }
+                }, 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

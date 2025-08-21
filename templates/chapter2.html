@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Cell Biology Chapter -->
+<div class="chapter-page" id="cell-biology">
+    <div class="chapter-header">
+        <div class="chapter-number">Chapter 2</div>
+        <h2 class="chapter-main-title">🔬 Cell Biology - Cellular Structures</h2>
+        <p class="chapter-description">Study of cellular components and their functions</p>
+    </div>
+
+    <div class="chapter-text-content">
+        <h2>{{ t['chapter2_title'] }}</h2>
+
+        <div class="key-points">
+            <h3>Key Concepts:</h3>
+            <ul>
+                {% for point in t['chapter2_key_points'] %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="quote-section">
+            <h3>Expert Insight:</h3>
+            <div class="quote">
+                <blockquote>{{ t['chapter2_quote'] }}</blockquote>
+            </div>
+        </div>
+
+        <div class="cellular-components">
+            <h3>Major Cellular Components:</h3>
+            <div class="components-grid">
+                <div class="component-card">
+                    <h4>Nucleus</h4>
+                    <p>Control center of the cell containing DNA</p>
+                </div>
+                <div class="component-card">
+                    <h4>Mitochondria</h4>
+                    <p>Powerhouse of the cell producing ATP</p>
+                </div>
+                <div class="component-card">
+                    <h4>Endoplasmic Reticulum</h4>
+                    <p>Protein and lipid synthesis</p>
+                </div>
+                <div class="component-card">
+                    <h4>Golgi Apparatus</h4>
+                    <p>Protein modification and transport</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
