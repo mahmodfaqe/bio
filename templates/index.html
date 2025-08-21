@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section fade-in">
+  <div class="hero-content">
+    <h1 class="hero-title">{{ t.get('hero_title', 'Biology Study Guide') }}</h1>
+    <p class="hero-subtitle">{{ t.get('hero_subtitle', 'Comprehensive guide for biology students') }}</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('chapters', lang=lang) }}" class="btn btn-primary">
+        <i class="fas fa-list"></i> {{ t.get('cta_view_chapters', 'View All Chapters') }}
+      </a>
+      <a href="{{ url_for('guide', lang=lang) }}" class="btn btn-secondary">
+        <i class="fas fa-book-open"></i> {{ t.get('cta_open_guide', 'Open Full Guide') }}
+      </a>
+    </div>
+  </div>
+</section>
+
+
+{% endblock %}

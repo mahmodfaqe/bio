@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - Manage {{ chapter.get_title(lang) }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #1e40af;
+            --secondary-teal: #0891b2;
+            --accent-emerald: #059669;
+            --warm-gold: #f59e0b;
+            --light-gray: #f8fafc;
+            --dark-text: #1e293b;
+            --medium-gray: #64748b;
+            --success-green: #10b981;
+            --error-red: #ef4444;
+            --warning-orange: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            color: var(--dark-text);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Section */
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-info h1 {
+            font-size: 2.5rem;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-info p {
+            color: var(--medium-gray);
+            font-size: 1.1rem;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--medium-gray);
+            font-size: 0.95rem;
+        }
+
+        .stat-item i {
+            color: var(--primary-blue);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            color: white;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-green), var(--accent-emerald));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--light-gray);
+            color: var(--medium-gray);
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: var(--dark-text);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--error-red), #dc2626);
+            color: white;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+
+        .flash-message {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .flash-message.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-green);
+            border-left: 4px solid var(--success-green);
+        }
+
+        .flash-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-red);
+            border-left: 4px solid var(--error-red);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Slides Grid */
+        .slides-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--dark-text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .slides-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .slide-item {
+            background: var(--light-gray);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .slide-item:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-blue);
+        }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .slide-info h3 {
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .slide-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--medium-gray);
+        }
+
+        .slide-number {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .slide-content {
+            color: var(--medium-gray);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .slide-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .detail-item {
+            font-size: 0.9rem;
+        }
+
+        .detail-item strong {
+            color: var(--primary-blue);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .slide-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-text);
+        }
+
+        .empty-state p {
+            margin-bottom: 2rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .header-content {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .slide-header {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .flash-message {
+            border-left: none;
+            border-right: 4px solid;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .btn {
+                flex: 1;
+                justify-content: center;
+                min-width: 120px;
+            }
+
+            .header-info h1 {
+                font-size: 2rem;
+            }
+
+            .header-stats {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .slide-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .slide-actions {
+                width: 100%;
+            }
+
+            .slide-details {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-header,
+            .slides-section {
+                padding: 1.5rem;
+                border-radius: 12px;
+            }
+
+            .header-info h1 {
+                font-size: 1.8rem;
+            }
+
+            .slide-item {
+                padding: 1rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>{{ chapter.get_title(lang) }}</h1>
+                    <p>{{ chapter.get_description(lang) }}</p>
+                    <div class="header-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-images"></i>
+                            <span>{{ slides|length }} {% if lang == 'ckb' %}کەرەستەی خوێندن{% else %}study materials{% endif %}</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-eye"></i>
+                            <span>{{ chapter.view_count }} {% if lang == 'ckb' %}بینەر{% else %}views{% endif %}</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>{{ chapter.updated_at.strftime('%Y/%m/%d') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('add_slide', lang=lang) }}?chapter_id={{ chapter.id }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i>
+                        {% if lang == 'ckb' %}زیادکردنی کەرەستە{% else %}Add Material{% endif %}
+                    </a>
+                    <a href="{{ url_for('chapter', lang=lang, chapter_id=chapter.id) }}" class="btn btn-secondary" target="_blank">
+                        <i class="fas fa-external-link-alt"></i>
+                        {% if lang == 'ckb' %}پیشبینین{% else %}Preview{% endif %}
+                    </a>
+                    <a href="{{ url_for('admin_dashboard', lang=lang) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        {% if lang == 'ckb' %}گەڕانەوە{% else %}Back to Dashboard{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slides Section -->
+        <div class="slides-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-images"></i>
+                    {% if lang == 'ckb' %}کەرەستەکانی خوێندن{% else %}Study Materials{% endif %}
+                </h2>
+                <span class="slides-count">{{ slides|length }} {% if lang == 'ckb' %}کەرەستە{% else %}items{% endif %}</span>
+            </div>
+
+            {% if slides %}
+            <div class="slides-grid">
+                {% for slide in slides %}
+                <div class="slide-item" id="slide-{{ slide.id }}">
+                    <div class="slide-header">
+                        <div class="slide-info">
+                            <h3>{{ slide.get_title(lang) }}</h3>
+                            <div class="slide-meta">
+                                <span><i class="fas fa-sort-numeric-up"></i> Order: {{ slide.order }}</span>
+                                <span><i class="fas fa-calendar"></i> {{ slide.updated_at.strftime('%Y/%m/%d') }}</span>
+                                {% if slide.view_count > 0 %}
+                                <span><i class="fas fa-eye"></i> {{ slide.view_count }} views</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="slide-number">{{ slide.order }}</div>
+                    </div>
+
+                    <div class="slide-content">
+                        {{ slide.get_content(lang)[:200] }}{% if slide.get_content(lang)|length > 200 %}...{% endif %}
+                    </div>
+
+                    {% if slide.location or slide.functions or slide.components %}
+                    <div class="slide-details">
+                        {% if slide.location %}
+                        <div class="detail-item">
+                            <strong><i class="fas fa-map-marker-alt"></i> Location:</strong>
+                            {{ slide.location[:50] }}{% if slide.location|length > 50 %}...{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if slide.functions %}
+                        <div class="detail-item">
+                            <strong><i class="fas fa-cogs"></i> Functions:</strong>
+                            {{ slide.functions[:50] }}{% if slide.functions|length > 50 %}...{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if slide.components %}
+                        <div class="detail-item">
+                            <strong><i class="fas fa-puzzle-piece"></i> Components:</strong>
+                            {{ slide.components[:50] }}{% if slide.components|length > 50 %}...{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="slide-actions">
+                        <a href="{{ url_for('edit_slide', lang=lang, slide_id=slide.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i>
+                            {% if lang == 'ckb' %}دەستکاری{% else %}Edit{% endif %}
+                        </a>
+                        <button onclick="deleteSlide({{ slide.id }}, '{{ slide.get_title(lang) }}')" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i>
+                            {% if lang == 'ckb' %}سڕینەوە{% else %}Delete{% endif %}
+                        </button>
+                        <a href="{{ url_for('chapter', lang=lang, chapter_id=chapter.id) }}#slide-{{ slide.order }}" class="btn btn-secondary btn-sm" target="_blank">
+                            <i class="fas fa-eye"></i>
+                            {% if lang == 'ckb' %}بینین{% else %}View{% endif %}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-microscope"></i>
+                <h3>{% if lang == 'ckb' %}هیچ کەرەستەیەکی خوێندن نییە{% else %}No study materials yet{% endif %}</h3>
+                <p>{% if lang == 'ckb' %}دەست بکە بە زیادکردنی یەکەم کەرەستەی خوێندن بۆ ئەم بابەتە.{% else %}Start by adding the first study material for this chapter.{% endif %}</p>
+                <a href="{{ url_for('add_slide', lang=lang) }}?chapter_id={{ chapter.id }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i>
+                    {% if lang == 'ckb' %}زیادکردنی یەکەم کەرەستە{% else %}Add First Material{% endif %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Delete slide function
+        function deleteSlide(slideId, slideTitle) {
+            const confirmMessage = "{{ 'دڵنیایت لە سڕینەوەی ئەم کەرەستەیە؟' if lang == 'ckb' else 'Are you sure you want to delete this material?' }}";
+
+            if (confirm(confirmMessage + '\n\n"' + slideTitle + '"')) {
+                const slideItem = document.getElementById('slide-' + slideId);
+                slideItem.classList.add('loading');
+
+                fetch(`{{ url_for('delete_slide', lang=lang, slide_id=0) }}`.replace('0', slideId), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        slideItem.style.opacity = '0';
+                        slideItem.style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            slideItem.remove();
+                            updateSlidesCount();
+                        }, 300);
+
+                        showNotification('success', data.message);
+                    } else {
+                        slideItem.classList.remove('loading');
+                        showNotification('error', data.message);
+                    }
+                })
+                .catch(error => {
+                    slideItem.classList.remove('loading');
+                    console.error('Error:', error);
+                    showNotification('error', "{{ 'هەڵە لە سڕینەوەی کەرەستە' if lang == 'ckb' else 'Error deleting material' }}");
+                });
+            }
+        }
+
+        // Update slides count
+        function updateSlidesCount() {
+            const remainingSlides = document.querySelectorAll('.slide-item').length;
+            const countElement = document.querySelector('.slides-count');
+            if (countElement) {
+                countElement.textContent = remainingSlides + " {{ 'کەرەستە' if lang == 'ckb' else 'items' }}";
+            }
+
+            // Show empty state if no slides remain
+            if (remainingSlides === 0) {
+                location.reload();
+            }
+        }
+
+        // Show notification
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = `flash-message ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                <span>${message}</span>
+            `;
+
+            const flashContainer = document.querySelector('.flash-messages') || createFlashContainer();
+            flashContainer.appendChild(notification);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 5000);
+        }
+
+        // Create flash messages container if it doesn't exist
+        function createFlashContainer() {
+            const container = document.createElement('div');
+            container.className = 'flash-messages';
+            document.querySelector('.container').insertBefore(container, document.querySelector('.page-header'));
+            return container;
+        }
+
+        // Auto-hide existing flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(function(message) {
+                setTimeout(function() {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateX(-100%)';
+                    setTimeout(function() {
+                        message.remove();
+                    }, 300);
+                }, 5000);
+            });
+
+            // Add fade-in animation to slide items
+            const slideItems = document.querySelectorAll('.slide-item');
+            slideItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    item.style.transition = 'all 0.5s ease';
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ctrl/Cmd + N for new slide
+                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('add_slide', lang=lang) }}?chapter_id={{ chapter.id }}";
+                }
+
+                // Ctrl/Cmd + B for back to dashboard
+                if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('admin_dashboard', lang=lang) }}";
+                }
+            });
+
+            // Search functionality
+            const searchInput = document.getElementById('search-slides');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const query = this.value.toLowerCase();
+                    const slideItems = document.querySelectorAll('.slide-item');
+
+                    slideItems.forEach(item => {
+                        const title = item.querySelector('h3').textContent.toLowerCase();
+                        const content = item.querySelector('.slide-content').textContent.toLowerCase();
+
+                        if (title.includes(query) || content.includes(query)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+
+        // Bulk operations (future feature)
+        let selectedSlides = [];
+
+        function toggleSlideSelection(slideId) {
+            const index = selectedSlides.indexOf(slideId);
+            if (index > -1) {
+                selectedSlides.splice(index, 1);
+            } else {
+                selectedSlides.push(slideId);
+            }
+            updateBulkActions();
+        }
+
+        function updateBulkActions() {
+            const bulkActions = document.querySelector('.bulk-actions');
+            if (bulkActions) {
+                bulkActions.style.display = selectedSlides.length > 0 ? 'block' : 'none';
+            }
+        }
+
+        // Drag and drop reordering (future feature)
+        function initializeDragAndDrop() {
+            const slideItems = document.querySelectorAll('.slide-item');
+            slideItems.forEach(item => {
+                item.draggable = true;
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('drop', handleDrop);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.id);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const draggedElement = document.getElementById(draggedId);
+            const dropTarget = e.target.closest('.slide-item');
+
+            if (draggedElement && dropTarget && draggedElement !== dropTarget) {
+                // Reorder slides (implementation would require backend support)
+                console.log('Reordering slides:', draggedId, dropTarget.id);
+            }
+        }
+    </script>
+</body>
+</html>

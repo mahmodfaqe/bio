@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - {{ t.users_management }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            min-height: 100vh;
+            color: #1e293b;
+            direction: {{ 'rtl' if lang_code == 'ckb' else 'ltr' }};
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: {{ '4px 0 25px rgba(0, 0, 0, 0.15)' if lang_code != 'ckb' else '-4px 0 25px rgba(0, 0, 0, 0.15)' }};
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            {{ 'right: 0;' if lang_code == 'ckb' else 'left: 0;' }}
+        }
+
+        .main-content {
+            {{ 'margin-right: 280px;' if lang_code == 'ckb' else 'margin-left: 280px;' }}
+            flex: 1;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .users-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .users-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f1f5f9;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 1rem;
+            text-align: {{ 'right' if lang_code == 'ckb' else 'left' }};
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .users-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .user-row {
+            transition: all 0.3s ease;
+        }
+
+        .user-row:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin: {{ '0 0 0 1rem' if lang_code == 'ckb' else '0 1rem 0 0' }};
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .user-details h4 {
+            margin: 0 0 0.25rem 0;
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .user-details p {
+            margin: 0;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-badge.super_admin {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .role-badge.chapter_admin {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .status-badge.inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .back-link {
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}
+        }
+
+        .back-link:hover {
+            color: #1d4ed8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-{{ 'right' if lang_code == 'ckb' else 'left' }}: 0;
+                padding: 1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .users-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .users-table {
+                font-size: 0.9rem;
+            }
+
+            .users-table th,
+            .users-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <!-- Sidebar content similar to dashboard -->
+            <div style="padding: 2rem; background: linear-gradient(135deg, var(--primary), #3b82f6); color: white;">
+                <h2 style="margin: 0; display: flex; align-items: center; gap: 1rem; {{ 'flex-direction: row-reverse;' if lang_code == 'ckb' else '' }}">
+                    <i class="fas fa-microscope"></i>
+                    <span>{{ t.site_title }}</span>
+                </h2>
+            </div>
+            <nav style="padding: 1rem;">
+                <a href="{{ url_for('admin_dashboard', lang=lang) }}" style="display: block; padding: 1rem; color: var(--secondary); text-decoration: none; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-tachometer-alt"></i> {{ t.dashboard }}
+                </a>
+                <a href="{{ url_for('manage_chapters', lang=lang) }}" style="display: block; padding: 1rem; color: var(--secondary); text-decoration: none; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-book"></i> {{ t.chapters }}
+                </a>
+                <a href="{{ url_for('manage_users', lang=lang) }}" style="display: block; padding: 1rem; color: white; background: var(--primary); text-decoration: none; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-users"></i> {{ t.users }}
+                </a>
+                <a href="{{ url_for('settings', lang=lang) }}" style="display: block; padding: 1rem; color: var(--secondary); text-decoration: none; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-cog"></i> {{ t.settings }}
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <a href="{{ url_for('admin_dashboard', lang=lang) }}" class="back-link">
+                <i class="fas fa-arrow-{{ 'right' if lang_code == 'ckb' else 'left' }}"></i>
+                {{ t.back_home }}
+            </a>
+
+            <header class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-users"></i>
+                    {{ t.users_management }}
+                </h1>
+                <a href="{{ url_for('add_user', lang=lang) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    {{ t.add_user }}
+                </a>
+            </header>
+
+            <section class="users-section">
+                <div class="users-header">
+                    <h2>{{ t.users }}</h2>
+                    <div style="color: var(--secondary); font-size: 0.9rem;">
+                        {{ users|length }} total users
+                    </div>
+                </div>
+
+                {% if users %}
+                <div style="overflow-x: auto;">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>{{ t.username }}</th>
+                                <th>{{ t.email }}</th>
+                                <th>{{ t.role }}</th>
+                                <th>{{ t.chapter }}</th>
+                                <th>{{ t.user_status }}</th>
+                                <th>{{ t.last_login }}</th>
+                                <th>{{ t.total_activities }}</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_data in users %}
+                            <tr class="user-row">
+                                <td>
+                                    <div class="user-info">
+                                        <div class="user-avatar">
+                                            {{ user_data.user.username[0].upper() }}
+                                        </div>
+                                        <div class="user-details">
+                                            <h4>{{ user_data.user.username }}</h4>
+                                            <p>ID: {{ user_data.user.id }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ user_data.user.email }}</td>
+                                <td>
+                                    <span class="role-badge {{ user_data.user.role }}">
+                                        {% if user_data.user.role == 'super_admin' %}
+                                            {{ t.super_admin }}
+                                        {% else %}
+                                            {{ t.chapter_admin }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if user_data.user.chapter %}
+                                        {{ user_data.user.chapter.get_title(lang) }}
+                                    {% else %}
+                                        <span style="color: var(--secondary);">All Chapters</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="status-badge {{ 'active' if user_data.user.is_active else 'inactive' }}">
+                                        {{ t.active if user_data.user.is_active else t.inactive }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if user_data.user.last_login %}
+                                        {{ user_data.user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                                        {% if user_data.days_since_login %}
+                                            <br><small style="color: var(--secondary);">{{ user_data.days_since_login }} days ago</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span style="color: var(--secondary);">{{ t.never }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ user_data.total_activities }}</strong>
+                                    {% if user_data.last_activity %}
+                                        <br><small style="color: var(--secondary);">
+                                            Last: {{ user_data.last_activity.action }}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('edit_user', lang=lang, user_id=user_data.user.id) }}"
+                                           class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if user_data.user.id != current_user.id %}
+                                        <button onclick="toggleUserStatus({{ user_data.user.id }}, {{ user_data.user.is_active|lower }})"
+                                                class="btn {{ 'btn-danger' if user_data.user.is_active else 'btn-success' }} btn-sm">
+                                            <i class="fas fa-{{ 'ban' if user_data.user.is_active else 'check' }}"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h3>No Users Found</h3>
+                    <p>Start by adding your first user to the system.</p>
+                    <a href="{{ url_for('add_user', lang=lang) }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        {{ t.add_user }}
+                    </a>
+                </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function toggleUserStatus(userId, currentStatus) {
+            const action = currentStatus ? 'deactivate' : 'activate';
+            const confirmation = confirm(`Are you sure you want to ${action} this user?`);
+
+            if (!confirmation) return;
+
+            fetch(`{{ url_for('toggle_user_status', lang=lang, user_id=0) }}`.replace('0', userId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating user status.');
+            });
+        }
+    </script>
+</body>
+</html>

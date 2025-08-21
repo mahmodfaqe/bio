@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Biochemistry Chapter -->
+<div class="chapter-page" id="biochemistry">
+    <div class="chapter-header">
+        <div class="chapter-number">Chapter 5</div>
+        <h2 class="chapter-main-title">🧪 Biochemistry - Metabolic Pathways</h2>
+        <p class="chapter-description">Chemical processes within living organisms</p>
+    </div>
+
+    <div class="chapter-text-content">
+        <h2>{{ t['chapter5_title'] }}</h2>
+        <p class="intro-text">{{ t['chapter5_intro'] }}</p>
+
+        <div class="pathway-diagram">
+            <h3>Key Metabolic Pathways</h3>
+            <div class="pathway glycolysis">
+                <h4>Glycolysis</h4>
+                <p>Glucose breakdown to pyruvate</p>
+            </div>
+            <div class="pathway krebs">
+                <h4>Krebs Cycle</h4>
+                <p>Citric acid cycle for energy production</p>
+            </div>
+            <div class="pathway etc">
+                <h4>Electron Transport Chain</h4>
+                <p>ATP synthesis through oxidative phosphorylation</p>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h3>{{ t['chapter5_subtitle'] }}</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ t['table_header1'] }}</th>
+                        <th>{{ t['table_header2'] }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in t['chapter5_table_data'] %}
+                    <tr>
+                        <td>{{ row[0] }}</td>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
