@@ -7,7 +7,7 @@ from functools import wraps
 import os
 from flask_migrate import Migrate
 from flask import Flask, render_template, request, url_for, redirect, flash, jsonify
-from datetime import datetime, timedelta   # ← add timedelta
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///biology_system.db'
@@ -112,34 +112,7 @@ I18N = {
         "success_added": "Successfully added",
         "success_updated": "Successfully updated",
         "success_deleted": "Successfully deleted",
-        "error_occurred": "An error occurred",
-        "users_management": "Users Management",
-        "add_user": "Add User",
-        "edit_user": "Edit User",
-        "user_status": "User Status",
-        "role": "Role",
-        "email": "Email",
-        "last_login": "Last Login",
-        "created_at": "Created At",
-        "total_activities": "Total Activities",
-        "super_admin": "Super Admin",
-        "chapter_admin": "Chapter Admin",
-        "active": "Active",
-        "inactive": "Inactive",
-        "never": "Never",
-        "system_settings": "System Settings",
-        "profile_settings": "Profile Settings",
-        "backup_database": "Backup Database",
-        "clear_old_logs": "Clear Old Logs",
-        "reset_view_counts": "Reset View Counts",
-        "current_password": "Current Password",
-        "new_password": "New Password",
-        "confirm_password": "Confirm Password",
-        "system_information": "System Information",
-        "database_size": "Database Size",
-        "flask_version": "Flask Version",
-        "python_version": "Python Version",
-        "maintenance": "Maintenance"
+        "error_occurred": "An error occurred"
     },
     "ckb": {
         "site_title": "ڕێبەری خوێندنی بایۆلۆجی",
@@ -161,7 +134,7 @@ I18N = {
         "chapters_intro": "داپۆشینی بەرفراوان بۆ بابەتە گرنگەکانی بایۆلۆجی.",
         "back_home": "← گەڕانەوە بۆ سەرەکی",
         "current_chapter_title": "ڕێبەری تەکنەلۆجی بایۆلۆجی",
-        "current_chapter_subtitle": "کەرەستەی خوێندنی بەرفراوان بۆ خوێندکارانی بایۆلۆجی",
+        "current_cha-pter_subtitle": "کەرەستەی خوێندنی بەرفراوان بۆ خوێندکارانی بایۆلۆجی",
         "all_chapters": "هەموو بابەتەکانی خوێندن",
         "chapter": "بابەت",
         "view_chapter": "خوێندنی بابەت",
@@ -230,35 +203,8 @@ I18N = {
         "success_added": "بە سەرکەوتووی زیادکرا",
         "success_updated": "بە سەرکەوتووی نوێکرایەوە",
         "success_deleted": "بە سەرکەوتووی سڕایەوە",
-        "error_occurred": "هەڵەیەک ڕوویدا",
-        "users_management": "بەڕێوەبردنی بەکارهێنەران",
-        "add_user": "زیادکردنی بەکارهێنەر",
-        "edit_user": "دەستکاری بەکارهێنەر",
-        "user_status": "دۆخی بەکارهێنەر",
-        "role": "ڕۆڵ",
-        "email": "ئیمەیڵ",
-        "last_login": "دوایین چوونەژوورەوە",
-        "created_at": "بەرواری دروستکردن",
-        "total_activities": "کۆی چالاکیەکان",
-        "super_admin": "بەڕێوەبەری گشتی",
-        "chapter_admin": "بەڕێوەبەری بابەت",
-        "active": "چالاک",
-        "inactive": "ناچالاک",
-        "never": "هەرگیز",
-        "system_settings": "ڕێکخستنی سیستەم",
-        "profile_settings": "ڕێکخستنی پرۆفایل",
-        "backup_database": "پاڵپشتکردنی بنکەی دراو",
-        "clear_old_logs": "پاککردنەوەی تۆمارە کۆنەکان",
-        "reset_view_counts": "گەڕاندنەوەی ئامارەکان",
-        "current_password": "تێپەڕەوشەی ئێستا",
-        "new_password": "تێپەڕەوشەی نوێ",
-        "confirm_password": "پشتڕاستکردنەوەی تێپەڕەوشە",
-        "system_information": "زانیاریی سیستەم",
-        "database_size": "قەبارەی بنکەی دراو",
-        "flask_version": "وەشانی Flask",
-        "python_version": "وەشانی Python",
-        "maintenance": "چاکسازی"
-    }
+        "error_occurred": "هەڵەیەک ڕوویدا"
+    },
 }
 
 
@@ -409,8 +355,11 @@ def pick_lang(lang):
 def inject_globals():
     lang = request.view_args.get('lang', 'en') if request.view_args else 'en'
     _, t, lang_code = pick_lang(lang)
-    return dict(t=t, lang=lang, lang_code=lang_code)
 
+    # Get chapters from database for global navigation
+    chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
+
+    return dict(t=t, lang=lang, lang_code=lang_code, chapters=chapters)
 
 def log_activity(action, target_type, target_id, description=''):
     """Log user activity"""
@@ -560,24 +509,26 @@ def index(lang):
 
 
 # Replace the existing chapters() function with this updated version
+# Replace the existing chapters() function with this updated version
 @app.route("/<lang>/chapters")
 def chapters(lang):
     """Chapters overview page - data from database"""
     lang, t, lang_code = pick_lang(lang)
     chapters_query = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
 
-    chapter_data = []
+    # Create consistent data structure that matches template expectations
+    enhanced_chapters = []
     for chapter in chapters_query:
         slides_count = chapter.get_slides_count()
         total_views = chapter.get_total_views()
-        chapter_data.append({
-            'chapter': chapter,
+
+        enhanced_chapters.append({
+            'chapter': chapter,  # This is what the template expects
             'slides_count': slides_count,
             'total_views': total_views
         })
 
-    return render_template("chapters.html", t=t, lang=lang, lang_code=lang_code, chapters=chapter_data)
-
+    return render_template("chapters.html", t=t, lang=lang, lang_code=lang_code, chapters=enhanced_chapters)
 
 @app.route("/<lang>/chapter/<int:chapter_id>")
 def chapter(lang, chapter_id):
@@ -863,17 +814,16 @@ def manage_slides(lang, chapter_id):
     chapter = Chapter.query.get_or_404(chapter_id)
     slides = Slide.query.filter_by(chapter_id=chapter_id, is_active=True).order_by(Slide.order).all()
 
+    # Fix: Add extra attributes to slide objects directly
     enhanced_slides = []
     for slide in slides:
-        enhanced_slides.append({
-            'slide': slide,
-            'views': slide.view_count,
-            'last_updated': slide.updated_at
-        })
+        # Add extra attributes to the slide object
+        slide.extra_views = slide.view_count  # In case you want to display separately
+        slide.last_updated_formatted = slide.updated_at
+        enhanced_slides.append(slide)
 
     return render_template('manage_slides.html', chapter=chapter, slides=enhanced_slides,
                            t=t, lang=lang, lang_code=lang_code)
-
 
 @app.route('/<lang>/admin/slide/add', methods=['GET', 'POST'])
 @admin_required
@@ -1097,346 +1047,6 @@ def dashboard_stats_api(lang):
     })
 
 
-# Add these routes to your app.py file after the existing admin routes
-
-# User Management Routes
-@app.route('/<lang>/admin/users')
-@super_admin_required
-def manage_users(lang):
-    """User management page - only for super admins"""
-    lang, t, lang_code = pick_lang(lang)
-    users = User.query.filter_by(is_active=True).order_by(User.created_at.desc()).all()
-
-    # Get chapters for assignment
-    chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
-
-    # Enhanced user data
-    enhanced_users = []
-    for user in users:
-        last_activity = Activity.query.filter_by(user_id=user.id).order_by(Activity.created_at.desc()).first()
-        total_activities = Activity.query.filter_by(user_id=user.id).count()
-
-        enhanced_users.append({
-            'user': user,
-            'last_activity': last_activity,
-            'total_activities': total_activities,
-            'days_since_login': (datetime.utcnow() - user.last_login).days if user.last_login else None
-        })
-
-    return render_template('manage_users.html', users=enhanced_users, chapters=chapters,
-                           t=t, lang=lang, lang_code=lang_code)
-
-
-@app.route('/<lang>/admin/user/add', methods=['GET', 'POST'])
-@super_admin_required
-def add_user(lang):
-    """Add new user - only super admins"""
-    lang, t, lang_code = pick_lang(lang)
-
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        role = request.form.get('role', 'chapter_admin')
-        chapter_id = request.form.get('chapter_id')
-
-        # Validation
-        if not username or not email or not password:
-            flash('All fields are required', 'error')
-            return render_template('add_user.html', t=t, lang=lang, lang_code=lang_code)
-
-        # Check if user already exists
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists', 'error')
-            return render_template('add_user.html', t=t, lang=lang, lang_code=lang_code)
-
-        if User.query.filter_by(email=email).first():
-            flash('Email already exists', 'error')
-            return render_template('add_user.html', t=t, lang=lang, lang_code=lang_code)
-
-        # Create new user
-        user = User(
-            username=username,
-            email=email,
-            role=role,
-            chapter_id=int(chapter_id) if chapter_id and chapter_id != '' else None
-        )
-        user.set_password(password)
-
-        db.session.add(user)
-        try:
-            db.session.commit()
-            log_activity('create', 'user', user.id, f'Created user: {username}')
-            flash('User created successfully', 'success')
-            return redirect(url_for('manage_users', lang=lang))
-        except Exception as e:
-            db.session.rollback()
-            flash('Error creating user', 'error')
-
-    chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
-    return render_template('add_user.html', chapters=chapters, t=t, lang=lang, lang_code=lang_code)
-
-
-@app.route('/<lang>/admin/user/<int:user_id>/edit', methods=['GET', 'POST'])
-@super_admin_required
-def edit_user(lang, user_id):
-    """Edit user - only super admins"""
-    lang, t, lang_code = pick_lang(lang)
-    user = User.query.get_or_404(user_id)
-
-    if request.method == 'POST':
-        user.username = request.form.get('username', user.username)
-        user.email = request.form.get('email', user.email)
-        user.role = request.form.get('role', user.role)
-
-        chapter_id = request.form.get('chapter_id')
-        user.chapter_id = int(chapter_id) if chapter_id and chapter_id != '' else None
-
-        # Update password if provided
-        new_password = request.form.get('password', '').strip()
-        if new_password:
-            user.set_password(new_password)
-
-        user.updated_at = datetime.utcnow()
-
-        try:
-            db.session.commit()
-            log_activity('edit', 'user', user.id, f'Updated user: {user.username}')
-            flash('User updated successfully', 'success')
-            return redirect(url_for('manage_users', lang=lang))
-        except Exception as e:
-            db.session.rollback()
-            flash('Error updating user', 'error')
-
-    chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
-    return render_template('edit_user.html', user=user, chapters=chapters, t=t, lang=lang, lang_code=lang_code)
-
-
-@app.route('/<lang>/admin/user/<int:user_id>/toggle-status', methods=['POST'])
-@super_admin_required
-def toggle_user_status(lang, user_id):
-    """Toggle user active status"""
-    user = User.query.get_or_404(user_id)
-
-    # Prevent deactivating yourself
-    if user.id == current_user.id:
-        return jsonify({'success': False, 'message': 'Cannot deactivate yourself'})
-
-    user.is_active = not user.is_active
-    user.updated_at = datetime.utcnow()
-
-    try:
-        db.session.commit()
-        action = 'activate' if user.is_active else 'deactivate'
-        log_activity(action, 'user', user.id, f'{action.title()}d user: {user.username}')
-
-        return jsonify({
-            'success': True,
-            'message': f'User {"activated" if user.is_active else "deactivated"} successfully',
-            'is_active': user.is_active
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': 'Error updating user status'})
-
-
-# Settings Routes
-@app.route('/<lang>/admin/settings')
-@admin_required
-def settings(lang):
-    """Settings page"""
-    lang, t, lang_code = pick_lang(lang)
-
-    # Get system statistics
-    total_chapters = Chapter.query.filter_by(is_active=True).count()
-    total_slides = Slide.query.filter_by(is_active=True).count()
-    total_users = User.query.filter_by(is_active=True).count()
-    total_views = (db.session.query(db.func.sum(Chapter.view_count)).scalar() or 0) + \
-                  (db.session.query(db.func.sum(Slide.view_count)).scalar() or 0)
-
-    # Get recent activities
-    recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(50).all()
-
-    # Database size (approximate)
-    db_size = "N/A"  # You can implement actual database size calculation if needed
-
-    system_info = {
-        'total_chapters': total_chapters,
-        'total_slides': total_slides,
-        'total_users': total_users,
-        'total_views': total_views,
-        'total_activities': len(recent_activities),
-        'db_size': db_size,
-        'flask_version': '2.3.3',  # Update with actual version
-        'python_version': '3.9+',  # Update with actual version
-        'database': 'SQLite'
-    }
-
-    return render_template('settings.html', system_info=system_info,
-                           recent_activities=recent_activities[:10], t=t, lang=lang, lang_code=lang_code)
-
-
-@app.route('/<lang>/admin/settings/profile', methods=['GET', 'POST'])
-@admin_required
-def profile_settings(lang):
-    """User profile settings"""
-    lang, t, lang_code = pick_lang(lang)
-
-    if request.method == 'POST':
-        # Update profile
-        current_user.email = request.form.get('email', current_user.email)
-
-        # Update password if provided
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
-
-        if new_password:
-            if not current_user.check_password(current_password):
-                flash('Current password is incorrect', 'error')
-                return render_template('profile_settings.html', t=t, lang=lang, lang_code=lang_code)
-
-            if new_password != confirm_password:
-                flash('New passwords do not match', 'error')
-                return render_template('profile_settings.html', t=t, lang=lang, lang_code=lang_code)
-
-            current_user.set_password(new_password)
-
-        current_user.updated_at = datetime.utcnow()
-
-        try:
-            db.session.commit()
-            log_activity('edit', 'profile', current_user.id, 'Updated profile settings')
-            flash('Profile updated successfully', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash('Error updating profile', 'error')
-
-    return render_template('profile_settings.html', t=t, lang=lang, lang_code=lang_code)
-
-
-@app.route('/<lang>/admin/settings/system', methods=['GET', 'POST'])
-@super_admin_required
-def system_settings(lang):
-    """System settings - only super admins"""
-    lang, t, lang_code = pick_lang(lang)
-
-    if request.method == 'POST':
-        action = request.form.get('action')
-
-        if action == 'backup_database':
-            # Implement database backup logic
-            try:
-                # Create backup
-                backup_filename = f"biology_system_backup_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.db"
-                # Copy database file (for SQLite)
-                import shutil
-                shutil.copy2('biology_system.db', f'backups/{backup_filename}')
-
-                log_activity('backup', 'system', 0, 'Created database backup')
-                flash('Database backup created successfully', 'success')
-            except Exception as e:
-                flash('Error creating backup', 'error')
-
-        elif action == 'clear_logs':
-            # Clear old activity logs
-            try:
-                # Keep only last 30 days
-                cutoff_date = datetime.utcnow() - timedelta(days=30)
-                old_activities = Activity.query.filter(Activity.created_at < cutoff_date).all()
-
-                for activity in old_activities:
-                    db.session.delete(activity)
-
-                db.session.commit()
-                log_activity('maintenance', 'system', 0, f'Cleared {len(old_activities)} old activity logs')
-                flash(f'Cleared {len(old_activities)} old activity logs', 'success')
-            except Exception as e:
-                db.session.rollback()
-                flash('Error clearing logs', 'error')
-
-        elif action == 'reset_views':
-            # Reset all view counts
-            try:
-                Chapter.query.update({Chapter.view_count: 0})
-                Slide.query.update({Slide.view_count: 0})
-                db.session.commit()
-
-                log_activity('maintenance', 'system', 0, 'Reset all view counts')
-                flash('All view counts reset successfully', 'success')
-            except Exception as e:
-                db.session.rollback()
-                flash('Error resetting view counts', 'error')
-
-    return render_template('system_settings.html', t=t, lang=lang, lang_code=lang_code)
-
-
-# API Routes for Settings
-@app.route('/api/<lang>/export/data')
-@admin_required
-def export_data_api(lang):
-    """Export system data as JSON"""
-    try:
-        # Export data based on user permissions
-        if current_user.is_super_admin:
-            chapters = Chapter.query.filter_by(is_active=True).all()
-        else:
-            chapters = [current_user.chapter] if current_user.chapter else []
-
-        export_data = {
-            'export_date': datetime.utcnow().isoformat(),
-            'exported_by': current_user.username,
-            'chapters': []
-        }
-
-        for chapter in chapters:
-            slides = Slide.query.filter_by(chapter_id=chapter.id, is_active=True).all()
-            chapter_data = {
-                'id': chapter.id,
-                'title_en': chapter.title_en,
-                'title_ckb': chapter.title_ckb,
-                'description_en': chapter.description_en,
-                'description_ckb': chapter.description_ckb,
-                'order': chapter.order,
-                'view_count': chapter.view_count,
-                'slides': []
-            }
-
-            for slide in slides:
-                slide_data = {
-                    'id': slide.id,
-                    'title_en': slide.title_en,
-                    'title_ckb': slide.title_ckb,
-                    'content_en': slide.content_en,
-                    'content_ckb': slide.content_ckb,
-                    'order': slide.order,
-                    'view_count': slide.view_count,
-                    'image_url': slide.image_url,
-                    'components': slide.components,
-                    'location': slide.location,
-                    'functions': slide.functions
-                }
-                chapter_data['slides'].append(slide_data)
-
-            export_data['chapters'].append(chapter_data)
-
-        log_activity('export', 'data', 0, 'Exported system data')
-
-        return jsonify({
-            'success': True,
-            'message': 'Data exported successfully',
-            'data': export_data
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': 'Error exporting data'
-        })
-
-
-
-
 @app.errorhandler(404)
 def not_found(error):
     """Custom 404 error handler"""
@@ -1452,10 +1062,7 @@ def before_request():
             create_sample_data()
             app.db_initialized = True
 
-# ======= place this block LAST in the file =======
-@app.errorhandler(404)
-def not_found(error):
-    return redirect(url_for('index', lang='en'))
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
