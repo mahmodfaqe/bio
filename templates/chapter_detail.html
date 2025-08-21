@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .chapter-hero {
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    margin: 2rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chapter-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    transform: rotate(30deg);
+    pointer-events: none;
+  }
+
+  .chapter-hero-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .chapter-hero-icon {
+    font-size: 5rem;
+    opacity: 0.9;
+  }
+
+  .chapter-hero-text h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    font-weight: 800;
+  }
+
+  .chapter-hero-meta {
+    display: flex;
+    gap: 2rem;
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .chapter-description {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+
+  .slides-section {
+    margin: 3rem 0;
+  }
+
+  .slides-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+  }
+
+  .slide-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+  }
+
+  .slide-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  }
+
+  .slide-image {
+    height: 200px;
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.1), rgba(8, 145, 178, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .slide-placeholder {
+    font-size: 3rem;
+    color: var(--primary-blue);
+    opacity: 0.5;
+  }
+
+  .slide-number {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--warm-gold);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .slide-content {
+    padding: 1.5rem;
+  }
+
+  .slide-title {
+    font-size: 1.3rem;
+    color: var(--dark-text);
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+
+  .slide-excerpt {
+    color: var(--medium-gray);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .slide-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--medium-gray);
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1rem;
+  }
+
+  .slide-views {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .breadcrumb {
+    margin: 1rem 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--medium-gray);
+  }
+
+  .breadcrumb a {
+    color: var(--primary-blue);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--secondary-teal);
+  }
+
+  .empty-slides {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 16px;
+    border: 2px dashed #e2e8f0;
+  }
+
+  .empty-slides i {
+    font-size: 4rem;
+    color: var(--medium-gray);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+  }
+
+  .navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin: 3rem 0;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  [dir="rtl"] .chapter-hero-content {
+    flex-direction: row-reverse;
+  }
+
+  [dir="rtl"] .slide-number {
+    right: auto;
+    left: 15px;
+  }
+
+  [dir="rtl"] .breadcrumb {
+    flex-direction: row-reverse;
+  }
+
+  @media (max-width: 768px) {
+    .chapter-hero-content {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .chapter-hero-text h1 {
+      font-size: 2.5rem;
+    }
+
+    .chapter-hero-meta {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .slides-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .navigation-buttons {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb fade-in">
+  <a href="{{ url_for('index', lang=lang) }}">
+    <i class="fas fa-home"></i> {{ t['nav_home'] }}
+  </a>
+  <i class="fas fa-chevron-right"></i>
+  <a href="{{ url_for('chapters', lang=lang) }}">{{ t['nav_chapters'] }}</a>
+  <i class="fas fa-chevron-right"></i>
+  <span>{{ chapter.get_title(lang) }}</span>
+</nav>
+
+<!-- Chapter Hero Section -->
+<section class="chapter-hero fade-in">
+  <div class="chapter-hero-content">
+    <div class="chapter-hero-icon">
+      <i class="{{ chapter.icon }}"></i>
+    </div>
+    <div class="chapter-hero-text">
+      <h1>{{ chapter.order }}. {{ chapter.get_title(lang) }}</h1>
+      <div class="chapter-hero-meta">
+        <div class="meta-item">
+          <i class="fas fa-file-alt"></i>
+          <span>{{ slides|length }} {{ t.get('slides', 'materials') }}</span>
+        </div>
+        <div class="meta-item">
+          <i class="fas fa-eye"></i>
+          <span>{{ chapter.view_count + slides|sum(attribute='view_count') }} {{ t.get('views', 'views') }}</span>
+        </div>
+        <div class="meta-item">
+          <i class="fas fa-clock"></i>
+          <span>{{ t.get('updated', 'Updated') }}: {{ chapter.updated_at.strftime('%Y-%m-%d') if chapter.updated_at else 'N/A' }}</span>
+        </div>
+      </div>
+      <p class="chapter-description">{{ chapter.get_description(lang) }}</p>
+    </div>
+  </div>
+</section>
+
+<!-- Study Materials Section -->
+<section class="slides-section fade-in" id="slides">
+  <div class="section-header">
+    <h2 class="section-title">{{ t.get('study_materials', 'Study Materials') }}</h2>
+    {% if slides %}
+      <p class="section-subtitle">{{ slides|length }} {{ t.get('materials_available', 'materials available for study') }}</p>
+    {% endif %}
+  </div>
+
+  {% if slides %}
+    <div class="slides-grid">
+      {% for slide in slides %}
+      <div class="slide-card" onclick="location.href='{{ url_for('slide_detail', lang=lang, slide_id=slide.id) }}'">
+        <div class="slide-image">
+          {% if slide.image_url %}
+            <img src="{{ slide.image_url }}" alt="{{ slide.get_title(lang) }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="slide-placeholder" style="display: none;">
+              <i class="fas fa-image"></i>
+            </div>
+          {% else %}
+            <div class="slide-placeholder">
+              <i class="fas fa-microscope"></i>
+            </div>
+          {% endif %}
+          <div class="slide-number">{{ slide.order }}</div>
+        </div>
+
+        <div class="slide-content">
+          <h3 class="slide-title">{{ slide.get_title(lang) }}</h3>
+          {% if slide.get_content(lang) %}
+            <p class="slide-excerpt">{{ slide.get_content(lang)[:200] }}{% if slide.get_content(lang)|length > 200 %}...{% endif %}</p>
+          {% endif %}
+
+          {% if slide.components or slide.location or slide.functions %}
+            <div style="margin: 1rem 0; font-size: 0.85rem;">
+              {% if slide.components %}
+                <div style="margin-bottom: 0.5rem;">
+                  <strong>{{ t.get('components', 'Components') }}:</strong>
+                  <span style="color: var(--medium-gray);">{{ slide.components[:100] }}{% if slide.components|length > 100 %}...{% endif %}</span>
+                </div>
+              {% endif %}
+              {% if slide.location %}
+                <div style="margin-bottom: 0.5rem;">
+                  <strong>{{ t.get('location', 'Location') }}:</strong>
+                  <span style="color: var(--medium-gray);">{{ slide.location[:100] }}{% if slide.location|length > 100 %}...{% endif %}</span>
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <div class="slide-meta">
+            <div class="slide-views">
+              <i class="fas fa-eye"></i>
+              <span>{{ slide.view_count }} {{ t.get('views', 'views') }}</span>
+            </div>
+            <div>
+              <a href="{{ url_for('slide_detail', lang=lang, slide_id=slide.id) }}" style="color: var(--primary-blue); text-decoration: none; font-weight: 600;">
+                {{ t.get('view_details', 'View Details') }} <i class="fas fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-slides">
+      <i class="fas fa-file-alt"></i>
+      <h3>{{ t.get('no_materials', 'No Study Materials Yet') }}</h3>
+      <p>{{ t.get('materials_coming_soon', 'Study materials for this chapter are being prepared.') }}</p>
+    </div>
+  {% endif %}
+</section>
+
+<!-- Navigation -->
+<section class="navigation-buttons fade-in">
+  <div>
+    {% if chapter.order > 1 %}
+      <a href="{{ url_for('chapter', lang=lang, chapter_id=chapter.order - 1) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i>
+        {{ t.get('previous_chapter', 'Previous Chapter') }}
+      </a>
+    {% endif %}
+  </div>
+  <div>
+    <a href="{{ url_for('chapters', lang=lang) }}" class="btn btn-primary">
+      <i class="fas fa-list"></i>
+      {{ t.get('all_chapters', 'All Chapters') }}
+    </a>
+  </div>
+  <div>
+    {% set next_chapter = chapters|selectattr('order', '>', chapter.order)|first %}
+    {% if next_chapter %}
+      <a href="{{ url_for('chapter', lang=lang, chapter_id=next_chapter.id) }}" class="btn btn-secondary">
+        {{ t.get('next_chapter', 'Next Chapter') }}
+        <i class="fas fa-arrow-right"></i>
+      </a>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Endocrinology Chapter -->
+<div class="chapter-page" id="endocrinology">
+    <div class="chapter-header">
+        <div class="chapter-number">Chapter 8</div>
+        <h2 class="chapter-main-title">⚖️ Endocrinology - Hormonal Systems</h2>
+        <p class="chapter-description">Study of hormones and endocrine systems</p>
+    </div>
+
+    <div class="chapter-text-content">
+        <h2>{{ t['chapter8_title'] }}</h2>
+        <p class="intro-text">{{ t['chapter8_intro'] }}</p>
+
+        <div class="glands-system">
+            <h3>Major Endocrine Glands</h3>
+            <div class="glands-grid">
+                <div class="gland-card">Pituitary</div>
+                <div class="gland-card">Thyroid</div>
+                <div class="gland-card">Adrenal</div>
+                <div class="gland-card">Pancreas</div>
+            </div>
+        </div>
+
+        <div class="hormone-functions">
+            <h3>Key Hormones and Functions</h3>
+            <ul>
+                <li><strong>Insulin:</strong> Glucose regulation</li>
+                <li><strong>Cortisol:</strong> Stress response</li>
+                <li><strong>Thyroxine:</strong> Metabolic rate</li>
+                <li><strong>Estrogen/Testosterone:</strong> Sexual development</li>
+            </ul>
+        </div>
+
+        <div class="data-section">
+            <h3>{{ t['chapter8_subtitle'] }}</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ t['table_header1'] }}</th>
+                        <th>{{ t['table_header2'] }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in t['chapter8_table_data'] %}
+                    <tr>
+                        <td>{{ row[0] }}</td>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

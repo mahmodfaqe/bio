@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - Admin Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            padding: 3rem;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid rgba(244, 162, 97, 0.2);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2563eb, #2a9d8f);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 1.2rem;
+        }
+
+        .input-group i.left {
+            left: 1.5rem;
+        }
+
+        .input-group .form-input {
+            padding-left: 3.5rem;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #2563eb, #2a9d8f);
+            color: white;
+            border: none;
+            border-radius: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .flash-messages {
+            margin-bottom: 1.5rem;
+        }
+
+        .flash-message {
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flash-message.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .flash-message.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .back-link a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #2563eb;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .login-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo">
+                <i class="fas fa-microscope"></i>
+            </div>
+            <h1 class="login-title">
+                {% if lang == 'ckb' %}
+                    چوونەژوورەوە
+                {% else %}
+                    Admin Login
+                {% endif %}
+            </h1>
+            <p class="login-subtitle">{{ t.site_title }}</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="username">
+                    {% if lang == 'ckb' %}
+                        ناوی بەکارهێنەر
+                    {% else %}
+                        Username
+                    {% endif %}
+                </label>
+                <div class="input-group">
+                    <i class="fas fa-user left"></i>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        class="form-input"
+                        required
+                        autocomplete="username"
+                        placeholder="{% if lang == 'ckb' %}ناوی بەکارهێنەر{% else %}Enter username{% endif %}"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">
+                    {% if lang == 'ckb' %}
+                        تێپەڕەوشە
+                    {% else %}
+                        Password
+                    {% endif %}
+                </label>
+                <div class="input-group">
+                    <i class="fas fa-lock left"></i>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-input"
+                        required
+                        autocomplete="current-password"
+                        placeholder="{% if lang == 'ckb' %}تێپەڕەوشە{% else %}Enter password{% endif %}"
+                    >
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i>
+                {% if lang == 'ckb' %}
+                    چوونەژوورەوە
+                {% else %}
+                    Sign In
+                {% endif %}
+            </button>
+        </form>
+
+        <div class="back-link">
+            <a href="{{ url_for('index', lang=lang) }}">
+                <i class="fas fa-arrow-left"></i>
+                {% if lang == 'ckb' %}
+                    گەڕانەوە بۆ ماڵپەڕ
+                {% else %}
+                    Back to Website
+                {% endif %}
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Auto-focus first input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('username').focus();
+        });
+
+        // Form validation
+        document.querySelector('.login-form').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                e.preventDefault();
+                alert('{% if lang == "ckb" %}تکایە هەموو خانەکان پڕبکەرەوە{% else %}Please fill in all fields{% endif %}');
+            }
+        });
+
+        // Auto-hide flash messages
+        setTimeout(function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(function(message) {
+                message.style.opacity = '0';
+                message.style.transform = 'translateY(-20px)';
+                setTimeout(function() {
+                    message.remove();
+                }, 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

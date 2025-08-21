@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ chapter.get_title(lang) }} - {{ t["site_title"] }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f7ff;
+            color: #1e293b;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .chapter-title {
+            font-size: 2.5rem;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+
+        .chapter-desc {
+            color: #64748b;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #e0f2fe;
+            color: #0369a1;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #bae6fd;
+            transform: translateY(-2px);
+        }
+
+        .slides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .slide-card {
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .slide-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .slide-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .slide-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+        }
+
+        .slide-desc {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .slide-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            border-top: 1px solid #e2e8f0;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+        }
+
+        .view-btn {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            padding: 0.75rem;
+            background: #dbeafe;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .view-btn:hover {
+            background: #bfdbfe;
+        }
+
+        /* RTL Support */
+        [dir="rtl"] .back-btn {
+            flex-direction: row-reverse;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="chapter-title">{{ chapter.get_title(lang) }}</h1>
+            <p class="chapter-desc">{{ chapter.get_description(lang) }}</p>
+            <a href="{{ url_for('chapters', lang=lang) }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                {{ t["back_home"] }}
+            </a>
+        </div>
+
+        <div class="slides-grid">
+            {% for slide in slides %}
+            <div class="slide-card">
+                {% if slide.image_url %}
+                <img src="{{ slide.image_url }}" alt="{{ slide.get_title(lang) }}" class="slide-img">
+                {% else %}
+                <div style="height: 200px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #64748b;">
+                    <i class="fas fa-image fa-3x"></i>
+                </div>
+                {% endif %}
+
+                <div class="slide-content">
+                    <h3 class="slide-title">{{ slide.get_title(lang) }}</h3>
+                    <p class="slide-desc">
+                        {% if lang == 'ckb' %}
+                            {{ slide.content_ckb|striptags|truncate(150) }}
+                        {% else %}
+                            {{ slide.content_en|striptags|truncate(150) }}
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('chapter', lang=lang, chapter_id=chapter.id) }}#slide-{{ slide.id }}" class="view-btn">
+                        <i class="fas fa-eye"></i>
+                        {{ t["view_chapter"] }}
+                    </a>
+                </div>
+
+                <div class="slide-meta">
+                    <span>#{{ slide.order }}</span>
+                    <span>{{ slide.updated_at.strftime('%Y/%m/%d') }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
