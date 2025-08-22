@@ -9,7 +9,7 @@ import os
 import uuid
 from PIL import Image
 from flask_migrate import Migrate
-
+from sqlalchemy import text
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///biology_system.db'
@@ -129,7 +129,7 @@ I18N = {
         "success_deleted": "Successfully deleted",
         "error_occurred": "An error occurred",
 
-        # New image upload strings
+        # Image upload
         "upload_image": "Upload Image",
         "select_image": "Select Image File",
         "or": "or",
@@ -142,6 +142,14 @@ I18N = {
         "invalid_file_type": "Invalid file type. Please select PNG, JPG, JPEG, GIF, or WEBP files.",
         "file_too_large": "File too large. Maximum size is 5MB.",
         "compress_and_upload": "Compress & Upload",
+
+        # Dark mode
+        "dark_mode": "Dark Mode",
+        "light_mode": "Light Mode",
+        "toggle_theme": "Toggle Theme",
+        "theme_dark": "Switch to Dark Mode",
+        "theme_light": "Switch to Light Mode",
+        "accessibility_theme": "Press Ctrl+D to toggle theme",
     },
     "ckb": {
         "site_title": "ڕێبەری خوێندنی بایۆلۆجی",
@@ -234,7 +242,7 @@ I18N = {
         "success_deleted": "بە سەرکەوتووی سڕایەوە",
         "error_occurred": "هەڵەیەک ڕوویدا",
 
-        # New image upload strings
+        # Image upload
         "upload_image": "ئەپلۆدکردنی وێنە",
         "select_image": "وێنەیەک هەڵبژێرە",
         "or": "یان",
@@ -247,6 +255,14 @@ I18N = {
         "invalid_file_type": "جۆری فایل نادرووست. تکایە PNG, JPG, JPEG, GIF, یان WEBP فایل هەڵبژێرە.",
         "file_too_large": "فایل زۆر گەورەیە. ئەوپەڕی قەبارە 5MB یە.",
         "compress_and_upload": "پچڕاندن و ئەپلۆد",
+
+        # Dark mode
+        "dark_mode": "مۆدی تاریک",
+        "light_mode": "مۆدی ڕووناک",
+        "toggle_theme": "گۆڕینی مۆد",
+        "theme_dark": "گۆڕین بۆ مۆدی تاریک",
+        "theme_light": "گۆڕین بۆ مۆدی ڕووناک",
+        "accessibility_theme": "Ctrl+D بگرە بۆ گۆڕینی مۆد",
     }
 }
 
@@ -344,6 +360,22 @@ class Slide(db.Model):
         if self.thumbnail_filename:
             return url_for('uploaded_file', filename=f'thumbnails/{self.thumbnail_filename}')
         return self.get_image_url()
+
+
+class SlideSection(db.Model):
+    __tablename__ = 'slide_sections'
+
+    id = db.Column(db.Integer, primary_key=True)
+    slide_id = db.Column(db.Integer, db.ForeignKey('slide.id'), nullable=False)
+    name_en = db.Column(db.String(200), nullable=False)
+    name_ckb = db.Column(db.String(200))
+    icon = db.Column(db.String(50), default='fas fa-list')
+    items_json = db.Column(db.Text, default='[]')
+    order = db.Column(db.Integer, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    slide = db.relationship('Slide', backref='sections')
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1338,7 +1370,272 @@ def upload_image(lang):
 
 
 # Enhanced slide creation/editing routes
+@app.route('/api/<lang>/theme', methods=['POST'])
+def set_theme_preference(lang):
+    """API endpoint to save user theme preference"""
+    data = request.get_json()
+    theme = data.get('theme', 'light')
 
+    if theme not in ['light', 'dark']:
+        return jsonify({'success': False, 'message': 'Invalid theme'})
+
+    # If user is logged in, save preference to database
+    if current_user.is_authenticated:
+        # You might want to add a theme_preference column to your User model
+        # current_user.theme_preference = theme
+        # db.session.commit()
+        pass
+
+    response = jsonify({'success': True, 'theme': theme})
+    # Set a cookie for non-authenticated users
+    response.set_cookie('theme_preference', theme, max_age=365 * 24 * 60 * 60)  # 1 year
+
+    return response
+
+
+@app.route('/api/<lang>/theme', methods=['GET'])
+def get_theme_preference(lang):
+    """API endpoint to get user theme preference"""
+    theme = 'light'  # default
+
+    if current_user.is_authenticated:
+        # Get from user model if you add the field
+        # theme = getattr(current_user, 'theme_preference', 'light')
+        pass
+    else:
+        # Get from cookie
+        theme = request.cookies.get('theme_preference', 'light')
+
+    return jsonify({'theme': theme})
+
+
+# Update the context processor to include theme information
+@app.context_processor
+def inject_globals():
+    lang = request.view_args.get('lang', 'en') if request.view_args else 'en'
+    _, t, lang_code = pick_lang(lang)
+
+    # Get chapters from database for global navigation
+    chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
+
+    # Get user theme preference
+    user_theme = 'light'
+    if current_user.is_authenticated:
+        # user_theme = getattr(current_user, 'theme_preference', 'light')
+        pass
+    else:
+        user_theme = request.cookies.get('theme_preference', 'light')
+
+    return dict(
+        t=t,
+        lang=lang,
+        lang_code=lang_code,
+        chapters=chapters,
+        user_theme=user_theme
+    )
+
+
+# Optional: Add theme preference to User model
+# Add this to your User model class:
+"""
+class User(UserMixin, db.Model):
+    # ... existing fields ...
+    theme_preference = db.Column(db.String(10), default='light')
+    # ... rest of the model ...
+"""
+
+
+# Update the admin dashboard to show theme statistics (optional)
+@app.route('/<lang>/admin/theme-stats')
+@super_admin_required
+def theme_stats(lang):
+    """Theme usage statistics for super admins"""
+    lang, t, lang_code = pick_lang(lang)
+
+    # Count users by theme preference (if you implement the User model update)
+    # light_users = User.query.filter_by(theme_preference='light', is_active=True).count()
+    # dark_users = User.query.filter_by(theme_preference='dark', is_active=True).count()
+
+    stats = {
+        'light_users': 0,  # light_users
+        'dark_users': 0,  # dark_users
+        'total_users': User.query.filter_by(is_active=True).count()
+    }
+
+    return jsonify(stats)
+
+
+# Enhanced error handlers with theme support
+@app.errorhandler(404)
+def not_found(error):
+    """Custom 404 error handler with theme support"""
+    lang = request.view_args.get('lang', 'en') if request.view_args else 'en'
+    return redirect(url_for('index', lang=lang))
+
+# ------------------------------------------------------------------
+# Slide CRUD + Dynamic Sections
+# ------------------------------------------------------------------
+@app.route('/api/<lang>/slide/create', methods=['POST'])
+@admin_required
+def api_slide_create(lang):
+    # بەڕێوەبردنی FormData بە شێوەی دروست
+    form = request.form
+    try:
+        slide = Slide(
+            title_en=form['title_en'],
+            title_ckb=form['title_ckb'],
+            content_en=form['content_en'],
+            content_ckb=form['content_ckb'],
+            chapter_id=int(form['chapter_id']),
+            order=int(form['order']),
+            image_url=form.get('image_url', ''),
+            components=form.get('components', ''),
+            location=form.get('location', ''),
+            functions=form.get('functions', '')
+        )
+        db.session.add(slide)
+        db.session.commit()
+
+        # بەشەکان
+        sections_data = form.get('sections_data', '[]')
+        sections = json.loads(sections_data)
+        for sec in sections:
+            section = SlideSection(
+                slide_id=slide.id,
+                name_en=sec['name_en'],
+                name_ckb=sec.get('name_ckb', ''),
+                icon=sec.get('icon', 'fas fa-list'),
+                items_json=json.dumps(sec.get('items', []))
+            )
+            db.session.add(section)
+        db.session.commit()
+
+        log_activity('create', 'slide', slide.id, f'API create slide: {slide.title_en}')
+        return jsonify({'success': True, 'slide_id': slide.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/<lang>/slide/<int:slide_id>/update', methods=['POST'])
+@admin_required
+def api_slide_update(lang, slide_id):
+    """Update slide + sections"""
+    slide = Slide.query.get_or_404(slide_id)
+    form = request.form
+    try:
+        slide.title_en = form['title_en']
+        slide.title_ckb = form['title_ckb']
+        slide.content_en = form['content_en']
+        slide.content_ckb = form['content_ckb']
+        slide.chapter_id = int(form['chapter_id'])
+        slide.order = int(form['order'])
+        slide.image_url = form.get('image_url')
+        slide.image_filename = form.get('image_filename')
+        slide.thumbnail_filename = form.get('thumbnail_filename')
+        slide.components = form['components']
+        slide.location = form['location']
+        slide.functions = form['functions']
+        slide.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        # replace old sections
+        db.session.execute(
+            text('DELETE FROM slide_sections WHERE slide_id = :slide_id'),
+            {'slide_id': slide_id}
+        )
+        sections_json = form.get('sections_data', '[]')
+        sections = json.loads(sections_json)
+        for sec in sections:
+            sec['slide_id'] = slide_id
+            db.session.execute(
+                text("""
+                    INSERT INTO slide_sections(slide_id, name_en, name_ckb, icon, items_json)
+                    VALUES(:slide_id, :name_en, :name_ckb, :icon, :items_json)
+                """),
+                {
+                    'slide_id': sec['slide_id'],
+                    'name_en': sec['name_en'],
+                    'name_ckb': sec.get('name_ckb', ''),
+                    'icon': sec.get('icon', 'fas fa-list'),
+                    'items_json': json.dumps(sec.get('items', []))
+                }
+            )
+        db.session.commit()
+
+        log_activity('edit', 'slide', slide_id, f'API update slide: {slide.title_en}')
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ------------------------------------------------------------------
+# GET routes for editing
+# ------------------------------------------------------------------
+@app.route('/api/<lang>/slide/<int:slide_id>')
+@admin_required
+def api_get_slide(lang, slide_id):
+    """Get slide with dynamic sections for editing"""
+    lang, t, lang_code = pick_lang(lang)
+
+    slide = db.session.get(Slide, slide_id)
+    if not slide:
+        return jsonify({'success': False, 'message': 'Slide not found'}), 404
+
+    # Use ORM instead of raw SQL
+    sections = SlideSection.query.filter_by(slide_id=slide_id).all()
+
+    return jsonify({
+        'success': True,
+        'slide': {
+            'id': slide.id,
+            'chapter_id': slide.chapter_id,
+            'order': slide.order,
+            'title_en': slide.title_en,
+            'title_ckb': slide.title_ckb,
+            'content_en': slide.content_en,
+            'content_ckb': slide.content_ckb,
+            'image_url': slide.image_url,
+            'image_filename': slide.image_filename,
+            'components': slide.components,
+            'location': slide.location,
+            'functions': slide.functions
+        },
+        'sections': [
+            {
+                'id': section.id,
+                'name_en': section.name_en,
+                'name_ckb': section.name_ckb,
+                'icon': section.icon,
+                'items': json.loads(section.items_json)
+            }
+            for section in sections
+        ]
+    })
+
+# ------------------------------------------------------------------
+# Auto-save endpoints (optional)
+# ------------------------------------------------------------------
+@app.route('/api/<lang>/slide/autosave', methods=['POST'])
+@login_required
+def api_slide_autosave(lang):
+    """Lightweight auto-save for basic fields (no sections)"""
+    data = request.get_json()
+    slide_id = data.get('slide_id')
+    if slide_id:
+        slide = Slide.query.get(slide_id)
+    else:
+        slide = Slide()
+        db.session.add(slide)
+    slide.title_en = data.get('title_en', '')
+    slide.title_ckb = data.get('title_ckb', '')
+    slide.content_en = data.get('content_en', '')
+    slide.content_ckb = data.get('content_ckb', '')
+    slide.chapter_id = data.get('chapter_id', 1)
+    slide.order = data.get('order', 1)
+    slide.image_url = data.get('image_url', '')
+    db.session.commit()
+    return jsonify({'success': True, 'slide_id': slide.id})
 
 if __name__ == '__main__':
     with app.app_context():
