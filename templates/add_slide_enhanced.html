@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code }}" dir="{{ 'rtl' if lang_code == 'ckb' else 'ltr' }}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{{ t.site_title }} - {{ t.add_slide }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #2563eb;
+        }
+
+        .header h1 {
+            color: #1e293b;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .breadcrumb {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .header .breadcrumb a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .header .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #2563eb, #2a9d8f);
+            color: white;
+            padding: 2rem;
+        }
+
+        .card-header h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .image-upload-section {
+            border: 2px dashed #d1d5db;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            background: #f9fafb;
+            transition: all 0.3s ease;
+        }
+
+        .image-upload-section:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .image-upload-section.dragover {
+            border-color: #2563eb;
+            background: #eff6ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+        }
+
+        .upload-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .image-preview {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .preview-container {
+            position: relative;
+            display: inline-block;
+            max-width: 400px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .crop-btn {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .crop-btn:hover {
+            background: #d97706;
+        }
+
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        .url-input-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Dynamic Sections Styles */
+        .dynamic-sections {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .sections-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .sections-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .add-section-btn {
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .add-section-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .section-item {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .section-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-name-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            background: #f9fafb;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .section-btn {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .delete-section-btn {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .delete-section-btn:hover {
+            background: #fee2e2;
+        }
+
+        .bullet-points {
+            margin-top: 1rem;
+        }
+
+        .bullet-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .bullet-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .add-bullet-btn,
+        .remove-bullet-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .add-bullet-btn {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .add-bullet-btn:hover {
+            background: #bfdbfe;
+        }
+
+        .remove-bullet-btn {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .remove-bullet-btn:hover {
+            background: #fee2e2;
+        }
+
+        /* Cropper Modal */
+        .crop-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+}
+
+.crop-modal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+        .crop-modal-content {
+            background: white;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .crop-container {
+            max-height: 400px;
+            margin: 1rem 0;
+        }
+
+        .crop-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #2a9d8f);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+
+        .flash-message {
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flash-message.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .flash-message.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+
+            .sections-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: stretch;
+            }
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #2a9d8f);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-plus-circle"></i>
+                {{ t.add_slide }}
+            </h1>
+            <div class="breadcrumb">
+                <a href="{{ url_for('admin_dashboard', lang=lang) }}">{{ t.dashboard }}</a>
+                <i class="fas fa-chevron-right" style="margin: 0 0.5rem;"></i>
+                <span>{{ t.add_slide }}</span>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            <i class="fas fa-{% if category == 'error' %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Main Form -->
+        <div class="main-card">
+            <div class="card-header">
+                <h2>{{ t.add_new_slide }}</h2>
+                <p>زیادکردنی سلایدێکی نوێ بە کۆرسەکان</p>
+            </div>
+
+            <div class="card-body">
+                <form id="slideForm" method="POST" enctype="multipart/form-data">
+                    <!-- Chapter Selection -->
+                    <div class="form-group full-width">
+                        <label for="chapter_id">
+                            {{ t.chapter }} <span class="required">*</span>
+                        </label>
+                        <select id="chapter_id" name="chapter_id" class="form-select" required>
+                            <option value="">بابەتێک هەڵبژێرە...</option>
+                            {% for chapter in chapters %}
+                                <option value="{{ chapter.id }}">{{ chapter.get_title(lang) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Title Fields -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="title_en">
+                                {{ t.slide_title }} (English) <span class="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="title_en"
+                                name="title_en"
+                                class="form-input"
+                                required
+                                placeholder="Enter slide title in English..."
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="title_ckb">
+                                {{ t.slide_title }} (کوردی) <span class="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="title_ckb"
+                                name="title_ckb"
+                                class="form-input"
+                                required
+                                placeholder="ناونیشانی سلایدەکە بە کوردی..."
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Content Fields -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="content_en">
+                                {{ t.slide_content }} (English)
+                            </label>
+                            <textarea
+                                id="content_en"
+                                name="content_en"
+                                class="form-textarea"
+                                placeholder="Enter detailed content in English..."
+                            ></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="content_ckb">
+                                {{ t.slide_content }} (کوردی)
+                            </label>
+                            <textarea
+                                id="content_ckb"
+                                name="content_ckb"
+                                class="form-textarea"
+                                placeholder="ناوەڕۆکی ورد بە کوردی..."
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div class="form-group full-width">
+                        <label>{{ t.upload_image }}</label>
+                        <div class="image-upload-section" id="uploadSection">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">
+                                {{ t.select_image }}
+                            </div>
+                            <input type="file" id="imageFile" name="image" class="file-input" accept="image/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('imageFile').click()">
+                                <i class="fas fa-upload"></i>
+                                {{ t.select_image }}
+                            </button>
+
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+
+                            <div class="image-preview" id="imagePreview">
+                                <div class="preview-container">
+                                    <img id="previewImage" src="" alt="Preview" class="preview-image">
+                                    <div class="image-actions">
+                                        <button type="button" class="action-btn crop-btn" onclick="openCropModal()">
+                                            <i class="fas fa-crop"></i> کرۆپ
+                                        </button>
+                                        <button type="button" class="action-btn remove-btn" onclick="removeImage()">
+                                            <i class="fas fa-trash"></i> لابردن
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="url-input-section">
+                                <p style="margin-bottom: 1rem; color: #6b7280;">{{ t.or }}</p>
+                                <input
+                                    type="url"
+                                    id="image_url"
+                                    name="image_url"
+                                    class="form-input"
+                                    placeholder="{{ t.provide_url }}"
+                                >
+                                <div class="help-text">وێنەیەک لە ئینتەرنێتەوە بەکاربهێنە</div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden fields for uploaded image data -->
+                        <input type="hidden" id="image_filename" name="image_filename">
+                        <input type="hidden" id="thumbnail_filename" name="thumbnail_filename">
+                    </div>
+
+                    <!-- Dynamic Sections -->
+                    <div class="dynamic-sections">
+                        <div class="sections-header">
+                            <h3 class="sections-title">بەشە دینامیکەکان</h3>
+                            <button type="button" class="add-section-btn" onclick="addSection()">
+                                <i class="fas fa-plus"></i>
+                                بەش زیادکە
+                            </button>
+                        </div>
+                        <div id="sectionsContainer">
+                            <!-- Default sections will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Hidden field for sections data -->
+                    <input type="hidden" id="sections_data" name="sections_data">
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <a href="{{ url_for('admin_dashboard', lang=lang) }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            {{ t.cancel }}
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save"></i>
+                            {{ t.save }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crop Modal -->
+    <div id="cropModal" class="crop-modal">
+        <div class="crop-modal-content">
+            <h3 style="margin-bottom: 1rem;">کرۆپکردنی وێنە</h3>
+            <div class="crop-container">
+                <img id="cropImage" src="" alt="Crop" style="max-width: 100%;">
+            </div>
+            <div class="crop-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCropModal()">
+                    <i class="fas fa-times"></i>
+                    هەڵوەشاندنەوە
+                </button>
+                <button type="button" class="btn btn-primary" onclick="applyCrop()">
+                    <i class="fas fa-crop"></i>
+                    کرۆپ جێبەجێکە
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cropper;
+        let sections = [];
+        let sectionCounter = 0;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const slideForm = document.getElementById('slideForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const imageFile = document.getElementById('imageFile');
+            const uploadSection = document.getElementById('uploadSection');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImage = document.getElementById('previewImage');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+
+            // Initialize default sections
+            initializeDefaultSections();
+
+            // Drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                uploadSection.classList.add('dragover');
+            }
+
+            function unhighlight(e) {
+                uploadSection.classList.remove('dragover');
+            }
+
+            uploadSection.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    imageFile.files = files;
+                    handleFiles(files);
+                }
+            }
+
+            // File input change
+            imageFile.addEventListener('change', function(e) {
+                handleFiles(e.target.files);
+            });
+
+            function handleFiles(files) {
+                if (files.length > 0) {
+                    const file = files[0];
+
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                        showError('{{ t.invalid_file_type }}');
+                        return;
+                    }
+
+                    // Validate file size (15MB)
+                    if (file.size > 15 * 1024 * 1024) {
+                        showError('{{ t.file_too_large }}');
+                        return;
+                    }
+
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+
+                    // Upload image
+                    uploadImage(file);
+                }
+            }
+
+            function uploadImage(file) {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                // Show progress
+                progressBar.style.display = 'block';
+                progressFill.style.width = '0%';
+
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressFill.style.width = percentComplete + '%';
+                    }
+                });
+
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            document.getElementById('image_filename').value = response.filename;
+                            document.getElementById('thumbnail_filename').value = response.thumbnail_filename;
+                            showSuccess('{{ t.upload_success }}');
+                        } else {
+                            showError(response.message || '{{ t.upload_error }}');
+                        }
+                    } else {
+                        showError('{{ t.upload_error }}');
+                    }
+                    progressBar.style.display = 'none';
+                });
+
+                xhr.addEventListener('error', function() {
+                    showError('{{ t.upload_error }}');
+                    progressBar.style.display = 'none';
+                });
+
+                xhr.open('POST', '{{ url_for("upload_image", lang=lang) }}');
+                xhr.send(formData);
+            }
+
+            // Form submission
+            slideForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Validate required fields
+                const chapterId = document.getElementById('chapter_id').value;
+                const titleEn = document.getElementById('title_en').value.trim();
+                const titleCkb = document.getElementById('title_ckb').value.trim();
+
+                if (!chapterId) {
+                    showError('تکایە بابەتێک هەڵبژێرە');
+                    return;
+                }
+
+                if (!titleEn || !titleCkb) {
+                    showError('تکایە ناونیشان بە هەردوو زمان پڕبکەرەوە');
+                    return;
+                }
+
+                // Update sections data
+                updateSectionsData();
+
+                // Show loading state
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ t.save }}';
+                slideForm.classList.add('loading');
+
+                // Submit form
+                const formData = new FormData(slideForm);
+
+                fetch(slideForm.action || '{{ url_for("add_slide", lang=lang) }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess(data.message);
+                        setTimeout(() => {
+                            window.location.href = '{{ url_for("admin_dashboard", lang=lang) }}';
+                        }, 1500);
+                    } else {
+                        showError(data.message);
+                        submitBtn.innerHTML = '<i class="fas fa-save"></i> {{ t.save }}';
+                        slideForm.classList.remove('loading');
+                    }
+                })
+                .catch(error => {
+                    showError('{{ t.error_occurred }}');
+                    submitBtn.innerHTML = '<i class="fas fa-save"></i> {{ t.save }}';
+                    slideForm.classList.remove('loading');
+                });
+            });
+
+            function showError(message) {
+                showFlashMessage(message, 'error');
+            }
+
+            function showSuccess(message) {
+                showFlashMessage(message, 'success');
+            }
+
+            function showFlashMessage(message, type) {
+                // Remove existing messages
+                const existingMessages = document.querySelectorAll('.flash-message');
+                existingMessages.forEach(msg => msg.remove());
+
+                // Create new message
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flash-message ${type}`;
+                messageDiv.innerHTML = `
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i>
+                    <span>${message}</span>
+                `;
+
+                // Insert message
+                const container = document.querySelector('.container');
+                const header = document.querySelector('.header');
+                container.insertBefore(messageDiv, header.nextSibling);
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    messageDiv.style.opacity = '0';
+                    messageDiv.style.transform = 'translateY(-20px)';
+                    setTimeout(() => messageDiv.remove(), 300);
+                }, 5000);
+
+                // Scroll to message
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
+        // Dynamic Sections Functions
+        function initializeDefaultSections() {
+            // Add default sections
+            addSection('پێکهاتە', ['']);
+            addSection('شوێن', ['']);
+            addSection('کارەکان', ['']);
+        }
+
+        function addSection(name = '', bullets = ['']) {
+            const sectionId = `section_${sectionCounter++}`;
+            const section = {
+                id: sectionId,
+                name: name || 'بەشی نوێ',
+                bullets: bullets.length > 0 ? bullets : ['']
+            };
+
+            sections.push(section);
+            renderSection(section);
+            updateSectionsData();
+        }
+
+        function renderSection(section) {
+            const container = document.getElementById('sectionsContainer');
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'section-item';
+            sectionDiv.id = section.id;
+
+            sectionDiv.innerHTML = `
+                <div class="section-header">
+                    <input type="text" class="section-name-input" value="${section.name}"
+                           onchange="updateSectionName('${section.id}', this.value)"
+                           placeholder="ناوی بەش...">
+                    <div class="section-actions">
+                        <button type="button" class="section-btn delete-section-btn"
+                                onclick="deleteSection('${section.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="bullet-points" id="bullets_${section.id}">
+                    ${section.bullets.map((bullet, index) => `
+                        <div class="bullet-item">
+                            <input type="text" class="bullet-input" value="${bullet}"
+                                   onchange="updateBullet('${section.id}', ${index}, this.value)"
+                                   placeholder="خاڵێک بنووسە...">
+                            <button type="button" class="add-bullet-btn"
+                                    onclick="addBullet('${section.id}')">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            ${section.bullets.length > 1 ? `
+                                <button type="button" class="remove-bullet-btn"
+                                        onclick="removeBullet('${section.id}', ${index})">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            container.appendChild(sectionDiv);
+        }
+
+        function updateSectionName(sectionId, newName) {
+            const section = sections.find(s => s.id === sectionId);
+            if (section) {
+                section.name = newName;
+                updateSectionsData();
+            }
+        }
+
+        function updateBullet(sectionId, bulletIndex, newValue) {
+            const section = sections.find(s => s.id === sectionId);
+            if (section && section.bullets[bulletIndex] !== undefined) {
+                section.bullets[bulletIndex] = newValue;
+                updateSectionsData();
+            }
+        }
+
+        function addBullet(sectionId) {
+            const section = sections.find(s => s.id === sectionId);
+            if (section) {
+                section.bullets.push('');
+                rerenderSection(section);
+                updateSectionsData();
+            }
+        }
+
+        function removeBullet(sectionId, bulletIndex) {
+            const section = sections.find(s => s.id === sectionId);
+            if (section && section.bullets.length > 1) {
+                section.bullets.splice(bulletIndex, 1);
+                rerenderSection(section);
+                updateSectionsData();
+            }
+        }
+
+        function deleteSection(sectionId) {
+            if (confirm('دڵنیای لە سڕینەوەی ئەم بەشە؟')) {
+                sections = sections.filter(s => s.id !== sectionId);
+                document.getElementById(sectionId).remove();
+                updateSectionsData();
+            }
+        }
+
+        function rerenderSection(section) {
+            const sectionElement = document.getElementById(section.id);
+            sectionElement.remove();
+            renderSection(section);
+        }
+
+        function updateSectionsData() {
+    // Create properly formatted sections data
+    const sectionsData = sections.map(section => ({
+        name: section.name.trim(),
+        bullets: section.bullets.filter(bullet => bullet.trim() !== '')
+    })).filter(section => section.name !== '' || section.bullets.length > 0);
+
+    const jsonData = JSON.stringify(sectionsData);
+    document.getElementById('sections_data').value = jsonData;
+
+    console.log('Sections data updated:', jsonData); // Debug log
+}
+
+        // Image Cropping Functions
+        function openCropModal() {
+            const modal = document.getElementById('cropModal');
+            const cropImage = document.getElementById('cropImage');
+            const previewImage = document.getElementById('previewImage');
+
+            cropImage.src = previewImage.src;
+            modal.style.display = 'block';
+
+            setTimeout(() => {
+                cropper = new Cropper(cropImage, {
+                    aspectRatio: NaN,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: false,
+                    center: false,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            }, 100);
+        }
+
+        function closeCropModal() {
+            const modal = document.getElementById('cropModal');
+            modal.style.display = 'none';
+
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+
+        function applyCrop() {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 800,
+                    height: 600,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                });
+
+                canvas.toBlob(function(blob) {
+                    // Create new file from cropped canvas
+                    const file = new File([blob], 'cropped_image.jpg', {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+
+                    // Update preview
+                    const url = URL.createObjectURL(blob);
+                    document.getElementById('previewImage').src = url;
+
+                    // Upload cropped image
+                    uploadCroppedImage(file);
+
+                    closeCropModal();
+                }, 'image/jpeg', 0.9);
+            }
+        }
+
+        function uploadCroppedImage(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressFill.style.width = percentComplete + '%';
+                }
+            });
+
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        document.getElementById('image_filename').value = response.filename;
+                        document.getElementById('thumbnail_filename').value = response.thumbnail_filename;
+                        showSuccess('وێنە بە سەرکەوتووی کرۆپ کرا');
+                    } else {
+                        showError(response.message || 'هەڵە لە کرۆپکردنی وێنە');
+                    }
+                } else {
+                    showError('هەڵە لە کرۆپکردنی وێنە');
+                }
+                progressBar.style.display = 'none';
+            });
+
+            xhr.addEventListener('error', function() {
+                showError('هەڵە لە کرۆپکردنی وێنە');
+                progressBar.style.display = 'none';
+            });
+
+            xhr.open('POST', '{{ url_for("upload_image", lang=lang) }}');
+            xhr.send(formData);
+        }
+
+        function removeImage() {
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('imageFile').value = '';
+            document.getElementById('image_filename').value = '';
+            document.getElementById('thumbnail_filename').value = '';
+        }
+
+        function showSuccess(message) {
+            showFlashMessage(message, 'success');
+        }
+
+        function showError(message) {
+            showFlashMessage(message, 'error');
+        }
+
+        function showFlashMessage(message, type) {
+            // Remove existing messages
+            const existingMessages = document.querySelectorAll('.flash-message');
+            existingMessages.forEach(msg => msg.remove());
+
+            // Create new message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flash-message ${type}`;
+            messageDiv.innerHTML = `
+                <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+            // Insert message
+            const container = document.querySelector('.container');
+            const header = document.querySelector('.header');
+            container.insertBefore(messageDiv, header.nextSibling);
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transform = 'translateY(-20px)';
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 5000);
+
+            // Scroll to message
+            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>

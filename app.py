@@ -9,7 +9,16 @@ import os
 import uuid
 from PIL import Image
 from flask_migrate import Migrate
-from sqlalchemy import text
+
+import os
+import json
+import uuid
+from datetime import datetime
+from PIL import Image, ImageOps
+import io
+import base64
+from flask import Flask, request, jsonify, url_for
+from werkzeug.utils import secure_filename
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///biology_system.db'
@@ -18,8 +27,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # File upload configuration
 UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+MAX_FILE_SIZE = 15 * 1024 * 1024  # 15MB
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
@@ -129,7 +139,7 @@ I18N = {
         "success_deleted": "Successfully deleted",
         "error_occurred": "An error occurred",
 
-        # Image upload
+        # New image upload strings
         "upload_image": "Upload Image",
         "select_image": "Select Image File",
         "or": "or",
@@ -142,14 +152,6 @@ I18N = {
         "invalid_file_type": "Invalid file type. Please select PNG, JPG, JPEG, GIF, or WEBP files.",
         "file_too_large": "File too large. Maximum size is 5MB.",
         "compress_and_upload": "Compress & Upload",
-
-        # Dark mode
-        "dark_mode": "Dark Mode",
-        "light_mode": "Light Mode",
-        "toggle_theme": "Toggle Theme",
-        "theme_dark": "Switch to Dark Mode",
-        "theme_light": "Switch to Light Mode",
-        "accessibility_theme": "Press Ctrl+D to toggle theme",
     },
     "ckb": {
         "site_title": "ڕێبەری خوێندنی بایۆلۆجی",
@@ -242,7 +244,7 @@ I18N = {
         "success_deleted": "بە سەرکەوتووی سڕایەوە",
         "error_occurred": "هەڵەیەک ڕوویدا",
 
-        # Image upload
+        # New image upload strings
         "upload_image": "ئەپلۆدکردنی وێنە",
         "select_image": "وێنەیەک هەڵبژێرە",
         "or": "یان",
@@ -255,18 +257,18 @@ I18N = {
         "invalid_file_type": "جۆری فایل نادرووست. تکایە PNG, JPG, JPEG, GIF, یان WEBP فایل هەڵبژێرە.",
         "file_too_large": "فایل زۆر گەورەیە. ئەوپەڕی قەبارە 5MB یە.",
         "compress_and_upload": "پچڕاندن و ئەپلۆد",
-
-        # Dark mode
-        "dark_mode": "مۆدی تاریک",
-        "light_mode": "مۆدی ڕووناک",
-        "toggle_theme": "گۆڕینی مۆد",
-        "theme_dark": "گۆڕین بۆ مۆدی تاریک",
-        "theme_light": "گۆڕین بۆ مۆدی ڕووناک",
-        "accessibility_theme": "Ctrl+D بگرە بۆ گۆڕینی مۆد",
     }
 }
 
+import re
 
+
+# فلتەری nl2br بۆ گۆڕینی \n بۆ <br>
+@app.template_filter('nl2br')
+def nl2br_filter(s):
+    if s is None:
+        return ""
+    return s.replace('\n', '<br>\n')
 # Enhanced Database Models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -324,6 +326,12 @@ class Chapter(db.Model):
         slide_views = sum(slide.view_count for slide in self.slides)
         return self.view_count + slide_views
 
+
+import json
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+
+
 class Slide(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title_en = db.Column(db.String(200), nullable=False)
@@ -331,13 +339,14 @@ class Slide(db.Model):
     content_en = db.Column(db.Text)
     content_ckb = db.Column(db.Text)
     image_url = db.Column(db.String(500))
-    image_filename = db.Column(db.String(255))  # New field for uploaded images
-    thumbnail_filename = db.Column(db.String(255))  # New field for thumbnails
+    image_filename = db.Column(db.String(255))
+    thumbnail_filename = db.Column(db.String(255))
     order = db.Column(db.Integer, default=1)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
-    components = db.Column(db.Text)
-    location = db.Column(db.Text)
-    functions = db.Column(db.Text)
+
+    # Enhanced dynamic sections with custom names and bullet points
+    dynamic_sections = db.Column(db.Text)  # JSON field for dynamic sections
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     view_count = db.Column(db.Integer, default=0)
@@ -361,21 +370,22 @@ class Slide(db.Model):
             return url_for('uploaded_file', filename=f'thumbnails/{self.thumbnail_filename}')
         return self.get_image_url()
 
+    def get_dynamic_sections(self):
+        """Parse and return dynamic sections"""
+        if self.dynamic_sections:
+            try:
+                return json.loads(self.dynamic_sections)
+            except:
+                return []
+        return []
 
-class SlideSection(db.Model):
-    __tablename__ = 'slide_sections'
+    def set_dynamic_sections(self, sections):
+        """Set dynamic sections as JSON"""
+        if sections:
+            self.dynamic_sections = json.dumps(sections, ensure_ascii=False)
+        else:
+            self.dynamic_sections = None
 
-    id = db.Column(db.Integer, primary_key=True)
-    slide_id = db.Column(db.Integer, db.ForeignKey('slide.id'), nullable=False)
-    name_en = db.Column(db.String(200), nullable=False)
-    name_ckb = db.Column(db.String(200))
-    icon = db.Column(db.String(50), default='fas fa-list')
-    items_json = db.Column(db.Text, default='[]')
-    order = db.Column(db.Integer, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    slide = db.relationship('Slide', backref='sections')
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -916,65 +926,204 @@ def manage_slides(lang, chapter_id):
     return render_template('manage_slides.html', chapter=chapter, slides=enhanced_slides,
                            t=t, lang=lang, lang_code=lang_code)
 
+
+# FIXED: Updated add_slide route to properly handle dynamic sections
 @app.route('/<lang>/admin/slide/add', methods=['GET', 'POST'])
 @admin_required
 def add_slide(lang):
-    """Add new slide with image upload support"""
+    """Add new slide with dynamic sections and image cropping - FIXED VERSION"""
     lang, t, lang_code = pick_lang(lang)
 
     if request.method == 'POST':
-        chapter_id = int(request.form.get('chapter_id'))
-
-        if current_user.role == 'chapter_admin' and current_user.chapter_id != chapter_id:
-            return jsonify({'success': False, 'message': 'No permission to add slides to this chapter'})
-
-        max_order = db.session.query(db.func.max(Slide.order)).filter_by(chapter_id=chapter_id).scalar() or 0
-
-        slide = Slide(
-            title_en=request.form.get('title_en', ''),
-            title_ckb=request.form.get('title_ckb', ''),
-            content_en=request.form.get('content_en', ''),
-            content_ckb=request.form.get('content_ckb', ''),
-            order=max_order + 1,
-            chapter_id=chapter_id,
-            image_url=request.form.get('image_url', ''),
-            image_filename=request.form.get('image_filename', ''),
-            thumbnail_filename=request.form.get('thumbnail_filename', ''),
-            components=request.form.get('components', ''),
-            location=request.form.get('location', ''),
-            functions=request.form.get('functions', '')
-        )
-
-        db.session.add(slide)
         try:
+            # Log all form data for debugging
+            app.logger.info(f"Form data received: {dict(request.form)}")
+
+            chapter_id_str = request.form.get('chapter_id', '')
+            if not chapter_id_str:
+                return jsonify({'success': False, 'message': 'Chapter selection is required.'})
+
+            chapter_id = int(chapter_id_str)
+
+            # Check permissions
+            if current_user.role == 'chapter_admin' and current_user.chapter_id != chapter_id:
+                return jsonify({'success': False, 'message': 'No permission to add slides to this chapter'})
+
+            # Get max order for this chapter
+            max_order = db.session.query(db.func.max(Slide.order)).filter_by(chapter_id=chapter_id).scalar() or 0
+
+            # Parse dynamic sections - FIXED PARSING
+            sections_data_str = request.form.get('sections_data', '')
+            dynamic_sections = []
+
+            if sections_data_str:
+                try:
+                    parsed_sections = json.loads(sections_data_str)
+
+                    # Process each section
+                    for section in parsed_sections:
+                        if isinstance(section, dict) and section.get('name'):
+                            clean_section = {
+                                'name': section['name'].strip(),
+                                'bullets': [bullet.strip() for bullet in section.get('bullets', []) if bullet.strip()]
+                            }
+
+                            if clean_section['name'] or clean_section['bullets']:
+                                dynamic_sections.append(clean_section)
+                    app.logger.info(f"Processed dynamic sections: {dynamic_sections}")
+
+                except json.JSONDecodeError as e:
+                    app.logger.error(f"JSON decode error: {e}")
+                    app.logger.error(f"Raw sections data: {sections_data_str}")
+                except Exception as e:
+                    app.logger.error(f"Error processing sections: {e}")
+
+            # Create new slide
+            slide = Slide(
+                title_en=request.form.get('title_en', '').strip(),
+                title_ckb=request.form.get('title_ckb', '').strip(),
+                content_en=request.form.get('content_en', '').strip(),
+                content_ckb=request.form.get('content_ckb', '').strip(),
+                order=max_order + 1,
+                chapter_id=chapter_id,
+                image_url=request.form.get('image_url', '').strip(),
+                image_filename=request.form.get('image_filename', '').strip(),
+                thumbnail_filename=request.form.get('thumbnail_filename', '').strip()
+            )
+
+            # Set dynamic sections - FIXED
+            if dynamic_sections:
+                slide.set_dynamic_sections(dynamic_sections)
+                app.logger.info(f"Set dynamic sections for slide: {dynamic_sections}")
+
+            # Save to database
+            db.session.add(slide)
             db.session.commit()
+
+            # Log the activity
             log_activity('create', 'slide', slide.id, f'Added slide: {slide.title_en}')
 
-            if request.is_json:
-                return jsonify({'success': True, 'message': t['success_added']})
-            else:
-                flash(t['success_added'], 'success')
-                return redirect(url_for('manage_slides', lang=lang, chapter_id=chapter_id))
+            app.logger.info(f"Successfully created slide with ID: {slide.id}")
 
+            return jsonify({
+                'success': True,
+                'message': 'سلایدەکە بە سەرکەوتووی زیادکرا',
+                'chapter_id': chapter_id,
+                'slide_id': slide.id
+            })
+
+        except ValueError as e:
+            app.logger.error(f"ValueError in add_slide: {e}")
+            return jsonify({'success': False, 'message': 'Invalid chapter ID'})
         except Exception as e:
             db.session.rollback()
-            if request.is_json:
-                return jsonify({'success': False, 'message': t['error_occurred']})
-            else:
-                flash(t['error_occurred'], 'error')
+            app.logger.error(f"Error adding slide: {str(e)}")
+            return jsonify({
+                'success': False,
+                'message': f"هەڵەیەک ڕوویدا: {str(e)}"
+            }), 500
 
+    # GET request handling
     if current_user.is_super_admin:
         chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
     else:
         chapters = [current_user.chapter] if current_user.chapter else []
 
-    return render_template('add_slide.html', chapters=chapters, t=t, lang=lang, lang_code=lang_code)
+    return render_template('add_slide_enhanced.html', chapters=chapters, t=t, lang=lang, lang_code=lang_code)
+
+
+# Also update the Slide model's set_dynamic_sections method to ensure proper JSON handling
+def enhanced_set_dynamic_sections(self, sections):
+    """Enhanced method to set dynamic sections as JSON with better error handling"""
+    if sections:
+        try:
+            # Ensure sections is a list of dictionaries with proper structure
+            processed_sections = []
+            for section in sections:
+                if isinstance(section, dict):
+                    processed_section = {
+                        'name': str(section.get('name', '')).strip(),
+                        'bullets': [str(bullet).strip() for bullet in section.get('bullets', []) if str(bullet).strip()]
+                    }
+                    if processed_section['name'] or processed_section['bullets']:
+                        processed_sections.append(processed_section)
+
+            if processed_sections:
+                self.dynamic_sections = json.dumps(processed_sections, ensure_ascii=False, indent=2)
+                app.logger.info(f"Saved dynamic sections JSON: {self.dynamic_sections}")
+            else:
+                self.dynamic_sections = None
+        except Exception as e:
+            app.logger.error(f"Error setting dynamic sections: {e}")
+            self.dynamic_sections = None
+    else:
+        self.dynamic_sections = None
+
+
+
+@app.route('/api/<lang>/crop-image', methods=['POST'])
+@admin_required
+def crop_image(lang):
+    """Handle image cropping"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        crop_data = data.get('crop_data')
+
+        if not filename or not crop_data:
+            return jsonify({'success': False, 'message': 'Missing required data'})
+
+        # Path to original image
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'slides', filename)
+
+        if not os.path.exists(image_path):
+            return jsonify({'success': False, 'message': 'Image file not found'})
+
+        # Open and crop image
+        with Image.open(image_path) as img:
+            # Get crop coordinates
+            x = int(crop_data['x'])
+            y = int(crop_data['y'])
+            width = int(crop_data['width'])
+            height = int(crop_data['height'])
+
+            # Crop image
+            cropped = img.crop((x, y, x + width, y + height))
+
+            # Generate new filename for cropped image
+            name, ext = os.path.splitext(filename)
+            cropped_filename = f"{name}_cropped{ext}"
+            cropped_path = os.path.join(app.config['UPLOAD_FOLDER'], 'slides', cropped_filename)
+
+            # Save cropped image
+            cropped.save(cropped_path, quality=90, optimize=True)
+
+            # Create new thumbnail
+            thumbnail_filename = f"thumb_{cropped_filename}"
+            thumbnail_path = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails', thumbnail_filename)
+            create_thumbnail(cropped_path, thumbnail_path)
+
+            # Remove original files
+            os.remove(image_path)
+            original_thumb = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails', f"thumb_{filename}")
+            if os.path.exists(original_thumb):
+                os.remove(original_thumb)
+
+            return jsonify({
+                'success': True,
+                'filename': cropped_filename,
+                'thumbnail_filename': thumbnail_filename,
+                'image_url': url_for('uploaded_file', filename=f'slides/{cropped_filename}')
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error cropping image: {str(e)}'})
 
 
 @app.route('/<lang>/admin/slide/<int:slide_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_slide(lang, slide_id):
-    """Edit slide with image upload support"""
+    """Edit slide with dynamic sections and image upload support"""
     lang, t, lang_code = pick_lang(lang)
     slide = Slide.query.get_or_404(slide_id)
 
@@ -983,57 +1132,94 @@ def edit_slide(lang, slide_id):
         return redirect(url_for('admin_dashboard', lang=lang))
 
     if request.method == 'POST':
-        # Handle old image cleanup if new image is uploaded
-        old_image_filename = slide.image_filename
-        old_thumbnail_filename = slide.thumbnail_filename
-
-        slide.title_en = request.form.get('title_en', '')
-        slide.title_ckb = request.form.get('title_ckb', '')
-        slide.content_en = request.form.get('content_en', '')
-        slide.content_ckb = request.form.get('content_ckb', '')
-        slide.order = int(request.form.get('order', slide.order))
-        slide.image_url = request.form.get('image_url', '')
-
-        # Handle uploaded image
-        new_image_filename = request.form.get('image_filename', '')
-        new_thumbnail_filename = request.form.get('thumbnail_filename', '')
-
-        if new_image_filename and new_image_filename != old_image_filename:
-            slide.image_filename = new_image_filename
-            slide.thumbnail_filename = new_thumbnail_filename
-
-            # Clean up old files
-            if old_image_filename:
-                try:
-                    old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'slides', old_image_filename)
-                    if os.path.exists(old_image_path):
-                        os.remove(old_image_path)
-                except:
-                    pass
-
-            if old_thumbnail_filename:
-                try:
-                    old_thumb_path = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails', old_thumbnail_filename)
-                    if os.path.exists(old_thumb_path):
-                        os.remove(old_thumb_path)
-                except:
-                    pass
-
-        slide.components = request.form.get('components', '')
-        slide.location = request.form.get('location', '')
-        slide.functions = request.form.get('functions', '')
-        slide.updated_at = datetime.utcnow()
-
         try:
+            # Handle old image cleanup if new image is uploaded
+            old_image_filename = slide.image_filename
+            old_thumbnail_filename = slide.thumbnail_filename
+
+            # Update basic fields
+            slide.title_en = request.form.get('title_en', '').strip()
+            slide.title_ckb = request.form.get('title_ckb', '').strip()
+            slide.content_en = request.form.get('content_en', '').strip()
+            slide.content_ckb = request.form.get('content_ckb', '').strip()
+            slide.order = int(request.form.get('order', slide.order))
+            slide.image_url = request.form.get('image_url', '').strip()
+
+            # Handle uploaded image
+            new_image_filename = request.form.get('image_filename', '').strip()
+            new_thumbnail_filename = request.form.get('thumbnail_filename', '').strip()
+
+            if new_image_filename and new_image_filename != old_image_filename:
+                slide.image_filename = new_image_filename
+                slide.thumbnail_filename = new_thumbnail_filename
+
+                # Clean up old files
+                if old_image_filename:
+                    try:
+                        old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'slides', old_image_filename)
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
+                    except:
+                        pass
+
+                if old_thumbnail_filename:
+                    try:
+                        old_thumb_path = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails', old_thumbnail_filename)
+                        if os.path.exists(old_thumb_path):
+                            os.remove(old_thumb_path)
+                    except:
+                        pass
+
+            # Handle dynamic sections - This is the FIXED part
+            sections_data_str = request.form.get('sections_data', '').strip()
+            print(f"Received sections_data: {sections_data_str}")  # Debug log
+
+            if sections_data_str:
+                try:
+                    sections_data = json.loads(sections_data_str)
+                    print(f"Parsed sections_data: {sections_data}")  # Debug log
+
+                    # Clean up sections data - remove empty bullets
+                    cleaned_sections = []
+                    for section in sections_data:
+                        section_name = section.get('name', '').strip()
+                        section_bullets = section.get('bullets', [])
+
+                        # Filter out empty bullets
+                        cleaned_bullets = [bullet.strip() for bullet in section_bullets if bullet.strip()]
+
+                        # Only add section if it has name or bullets
+                        if section_name or cleaned_bullets:
+                            cleaned_section = {
+                                'name': section_name,
+                                'bullets': cleaned_bullets
+                            }
+                            cleaned_sections.append(cleaned_section)
+
+                    print(f"Cleaned sections: {cleaned_sections}")  # Debug log
+                    slide.set_dynamic_sections(cleaned_sections)
+
+                except json.JSONDecodeError as e:
+                    print(f"JSON decode error: {e}")  # Debug log
+                    flash('Error parsing sections data', 'error')
+            else:
+                print("No sections data received, setting empty")  # Debug log
+                slide.set_dynamic_sections([])
+
+            slide.updated_at = datetime.utcnow()
+
             db.session.commit()
             log_activity('edit', 'slide', slide.id, f'Updated slide: {slide.title_en}')
             flash(t['success_updated'], 'success')
             return redirect(url_for('manage_slides', lang=lang, chapter_id=slide.chapter_id))
+
         except Exception as e:
             db.session.rollback()
+            app.logger.error(f"Error updating slide: {str(e)}")
+            print(f"Exception in edit_slide: {str(e)}")  # Debug log
             flash(t['error_occurred'], 'error')
 
-    return render_template('edit_slide.html', slide=slide, t=t, lang=lang, lang_code=lang_code)
+    return render_template('edit_slide_enhanced.html', slide=slide, t=t, lang=lang, lang_code=lang_code)
 
 
 @app.route('/<lang>/admin/slide/<int:slide_id>/delete', methods=['POST'])
@@ -1370,272 +1556,7 @@ def upload_image(lang):
 
 
 # Enhanced slide creation/editing routes
-@app.route('/api/<lang>/theme', methods=['POST'])
-def set_theme_preference(lang):
-    """API endpoint to save user theme preference"""
-    data = request.get_json()
-    theme = data.get('theme', 'light')
 
-    if theme not in ['light', 'dark']:
-        return jsonify({'success': False, 'message': 'Invalid theme'})
-
-    # If user is logged in, save preference to database
-    if current_user.is_authenticated:
-        # You might want to add a theme_preference column to your User model
-        # current_user.theme_preference = theme
-        # db.session.commit()
-        pass
-
-    response = jsonify({'success': True, 'theme': theme})
-    # Set a cookie for non-authenticated users
-    response.set_cookie('theme_preference', theme, max_age=365 * 24 * 60 * 60)  # 1 year
-
-    return response
-
-
-@app.route('/api/<lang>/theme', methods=['GET'])
-def get_theme_preference(lang):
-    """API endpoint to get user theme preference"""
-    theme = 'light'  # default
-
-    if current_user.is_authenticated:
-        # Get from user model if you add the field
-        # theme = getattr(current_user, 'theme_preference', 'light')
-        pass
-    else:
-        # Get from cookie
-        theme = request.cookies.get('theme_preference', 'light')
-
-    return jsonify({'theme': theme})
-
-
-# Update the context processor to include theme information
-@app.context_processor
-def inject_globals():
-    lang = request.view_args.get('lang', 'en') if request.view_args else 'en'
-    _, t, lang_code = pick_lang(lang)
-
-    # Get chapters from database for global navigation
-    chapters = Chapter.query.filter_by(is_active=True).order_by(Chapter.order).all()
-
-    # Get user theme preference
-    user_theme = 'light'
-    if current_user.is_authenticated:
-        # user_theme = getattr(current_user, 'theme_preference', 'light')
-        pass
-    else:
-        user_theme = request.cookies.get('theme_preference', 'light')
-
-    return dict(
-        t=t,
-        lang=lang,
-        lang_code=lang_code,
-        chapters=chapters,
-        user_theme=user_theme
-    )
-
-
-# Optional: Add theme preference to User model
-# Add this to your User model class:
-"""
-class User(UserMixin, db.Model):
-    # ... existing fields ...
-    theme_preference = db.Column(db.String(10), default='light')
-    # ... rest of the model ...
-"""
-
-
-# Update the admin dashboard to show theme statistics (optional)
-@app.route('/<lang>/admin/theme-stats')
-@super_admin_required
-def theme_stats(lang):
-    """Theme usage statistics for super admins"""
-    lang, t, lang_code = pick_lang(lang)
-
-    # Count users by theme preference (if you implement the User model update)
-    # light_users = User.query.filter_by(theme_preference='light', is_active=True).count()
-    # dark_users = User.query.filter_by(theme_preference='dark', is_active=True).count()
-
-    stats = {
-        'light_users': 0,  # light_users
-        'dark_users': 0,  # dark_users
-        'total_users': User.query.filter_by(is_active=True).count()
-    }
-
-    return jsonify(stats)
-
-
-# Enhanced error handlers with theme support
-@app.errorhandler(404)
-def not_found(error):
-    """Custom 404 error handler with theme support"""
-    lang = request.view_args.get('lang', 'en') if request.view_args else 'en'
-    return redirect(url_for('index', lang=lang))
-
-# ------------------------------------------------------------------
-# Slide CRUD + Dynamic Sections
-# ------------------------------------------------------------------
-@app.route('/api/<lang>/slide/create', methods=['POST'])
-@admin_required
-def api_slide_create(lang):
-    # بەڕێوەبردنی FormData بە شێوەی دروست
-    form = request.form
-    try:
-        slide = Slide(
-            title_en=form['title_en'],
-            title_ckb=form['title_ckb'],
-            content_en=form['content_en'],
-            content_ckb=form['content_ckb'],
-            chapter_id=int(form['chapter_id']),
-            order=int(form['order']),
-            image_url=form.get('image_url', ''),
-            components=form.get('components', ''),
-            location=form.get('location', ''),
-            functions=form.get('functions', '')
-        )
-        db.session.add(slide)
-        db.session.commit()
-
-        # بەشەکان
-        sections_data = form.get('sections_data', '[]')
-        sections = json.loads(sections_data)
-        for sec in sections:
-            section = SlideSection(
-                slide_id=slide.id,
-                name_en=sec['name_en'],
-                name_ckb=sec.get('name_ckb', ''),
-                icon=sec.get('icon', 'fas fa-list'),
-                items_json=json.dumps(sec.get('items', []))
-            )
-            db.session.add(section)
-        db.session.commit()
-
-        log_activity('create', 'slide', slide.id, f'API create slide: {slide.title_en}')
-        return jsonify({'success': True, 'slide_id': slide.id})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/<lang>/slide/<int:slide_id>/update', methods=['POST'])
-@admin_required
-def api_slide_update(lang, slide_id):
-    """Update slide + sections"""
-    slide = Slide.query.get_or_404(slide_id)
-    form = request.form
-    try:
-        slide.title_en = form['title_en']
-        slide.title_ckb = form['title_ckb']
-        slide.content_en = form['content_en']
-        slide.content_ckb = form['content_ckb']
-        slide.chapter_id = int(form['chapter_id'])
-        slide.order = int(form['order'])
-        slide.image_url = form.get('image_url')
-        slide.image_filename = form.get('image_filename')
-        slide.thumbnail_filename = form.get('thumbnail_filename')
-        slide.components = form['components']
-        slide.location = form['location']
-        slide.functions = form['functions']
-        slide.updated_at = datetime.utcnow()
-        db.session.commit()
-
-        # replace old sections
-        db.session.execute(
-            text('DELETE FROM slide_sections WHERE slide_id = :slide_id'),
-            {'slide_id': slide_id}
-        )
-        sections_json = form.get('sections_data', '[]')
-        sections = json.loads(sections_json)
-        for sec in sections:
-            sec['slide_id'] = slide_id
-            db.session.execute(
-                text("""
-                    INSERT INTO slide_sections(slide_id, name_en, name_ckb, icon, items_json)
-                    VALUES(:slide_id, :name_en, :name_ckb, :icon, :items_json)
-                """),
-                {
-                    'slide_id': sec['slide_id'],
-                    'name_en': sec['name_en'],
-                    'name_ckb': sec.get('name_ckb', ''),
-                    'icon': sec.get('icon', 'fas fa-list'),
-                    'items_json': json.dumps(sec.get('items', []))
-                }
-            )
-        db.session.commit()
-
-        log_activity('edit', 'slide', slide_id, f'API update slide: {slide.title_en}')
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-# ------------------------------------------------------------------
-# GET routes for editing
-# ------------------------------------------------------------------
-@app.route('/api/<lang>/slide/<int:slide_id>')
-@admin_required
-def api_get_slide(lang, slide_id):
-    """Get slide with dynamic sections for editing"""
-    lang, t, lang_code = pick_lang(lang)
-
-    slide = db.session.get(Slide, slide_id)
-    if not slide:
-        return jsonify({'success': False, 'message': 'Slide not found'}), 404
-
-    # Use ORM instead of raw SQL
-    sections = SlideSection.query.filter_by(slide_id=slide_id).all()
-
-    return jsonify({
-        'success': True,
-        'slide': {
-            'id': slide.id,
-            'chapter_id': slide.chapter_id,
-            'order': slide.order,
-            'title_en': slide.title_en,
-            'title_ckb': slide.title_ckb,
-            'content_en': slide.content_en,
-            'content_ckb': slide.content_ckb,
-            'image_url': slide.image_url,
-            'image_filename': slide.image_filename,
-            'components': slide.components,
-            'location': slide.location,
-            'functions': slide.functions
-        },
-        'sections': [
-            {
-                'id': section.id,
-                'name_en': section.name_en,
-                'name_ckb': section.name_ckb,
-                'icon': section.icon,
-                'items': json.loads(section.items_json)
-            }
-            for section in sections
-        ]
-    })
-
-# ------------------------------------------------------------------
-# Auto-save endpoints (optional)
-# ------------------------------------------------------------------
-@app.route('/api/<lang>/slide/autosave', methods=['POST'])
-@login_required
-def api_slide_autosave(lang):
-    """Lightweight auto-save for basic fields (no sections)"""
-    data = request.get_json()
-    slide_id = data.get('slide_id')
-    if slide_id:
-        slide = Slide.query.get(slide_id)
-    else:
-        slide = Slide()
-        db.session.add(slide)
-    slide.title_en = data.get('title_en', '')
-    slide.title_ckb = data.get('title_ckb', '')
-    slide.content_en = data.get('content_en', '')
-    slide.content_ckb = data.get('content_ckb', '')
-    slide.chapter_id = data.get('chapter_id', 1)
-    slide.order = data.get('order', 1)
-    slide.image_url = data.get('image_url', '')
-    db.session.commit()
-    return jsonify({'success': True, 'slide_id': slide.id})
 
 if __name__ == '__main__':
     with app.app_context():

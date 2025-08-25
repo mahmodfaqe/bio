@@ -158,6 +158,12 @@
             color: #16a34a;
         }
 
+        .flash-message.info {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            color: #2563eb;
+        }
+
         .back-link {
             text-align: center;
             margin-top: 2rem;
@@ -178,6 +184,15 @@
             color: #2563eb;
         }
 
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading .login-btn {
+            background: #6b7280;
+        }
+
         @media (max-width: 480px) {
             .login-container {
                 padding: 2rem;
@@ -196,13 +211,7 @@
             <div class="login-logo">
                 <i class="fas fa-microscope"></i>
             </div>
-            <h1 class="login-title">
-                {% if lang == 'ckb' %}
-                    چوونەژوورەوە
-                {% else %}
-                    Admin Login
-                {% endif %}
-            </h1>
+            <h1 class="login-title">{{ t.admin_login_text }}</h1>
             <p class="login-subtitle">{{ t.site_title }}</p>
         </div>
 
@@ -211,7 +220,7 @@
                 <div class="flash-messages">
                     {% for category, message in messages %}
                         <div class="flash-message {{ category }}">
-                            <i class="fas fa-{% if category == 'error' %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+                            <i class="fas fa-{% if category == 'error' %}exclamation-triangle{% elif category == 'success' %}check-circle{% else %}info-circle{% endif %}"></i>
                             <span>{{ message }}</span>
                         </div>
                     {% endfor %}
@@ -219,15 +228,11 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST" class="login-form">
+        <form method="POST" action="{{ url_for('admin_login', lang=lang) }}" class="login-form" id="loginForm">
+            {{ csrf_token() if csrf_token }}
+
             <div class="form-group">
-                <label for="username">
-                    {% if lang == 'ckb' %}
-                        ناوی بەکارهێنەر
-                    {% else %}
-                        Username
-                    {% endif %}
-                </label>
+                <label for="username">{{ t.username }}</label>
                 <div class="input-group">
                     <i class="fas fa-user left"></i>
                     <input
@@ -237,19 +242,14 @@
                         class="form-input"
                         required
                         autocomplete="username"
-                        placeholder="{% if lang == 'ckb' %}ناوی بەکارهێنەر{% else %}Enter username{% endif %}"
+                        placeholder="{{ t.username }}"
+                        value="{{ request.form.username if request.form.username else '' }}"
                     >
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="password">
-                    {% if lang == 'ckb' %}
-                        تێپەڕەوشە
-                    {% else %}
-                        Password
-                    {% endif %}
-                </label>
+                <label for="password">{{ t.password }}</label>
                 <div class="input-group">
                     <i class="fas fa-lock left"></i>
                     <input
@@ -259,61 +259,111 @@
                         class="form-input"
                         required
                         autocomplete="current-password"
-                        placeholder="{% if lang == 'ckb' %}تێپەڕەوشە{% else %}Enter password{% endif %}"
+                        placeholder="{{ t.password }}"
                     >
                 </div>
             </div>
 
-            <button type="submit" class="login-btn">
+            <button type="submit" class="login-btn" id="loginBtn">
                 <i class="fas fa-sign-in-alt"></i>
-                {% if lang == 'ckb' %}
-                    چوونەژوورەوە
-                {% else %}
-                    Sign In
-                {% endif %}
+                {{ t.login }}
             </button>
         </form>
 
         <div class="back-link">
             <a href="{{ url_for('index', lang=lang) }}">
                 <i class="fas fa-arrow-left"></i>
-                {% if lang == 'ckb' %}
-                    گەڕانەوە بۆ ماڵپەڕ
-                {% else %}
-                    Back to Website
-                {% endif %}
+                {{ t.view_website }}
             </a>
         </div>
     </div>
 
     <script>
-        // Auto-focus first input
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('username').focus();
-        });
+            const loginForm = document.getElementById('loginForm');
+            const loginBtn = document.getElementById('loginBtn');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
 
-        // Form validation
-        document.querySelector('.login-form').addEventListener('submit', function(e) {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+            // Auto-focus first input
+            usernameInput.focus();
 
-            if (!username || !password) {
-                e.preventDefault();
-                alert('{% if lang == "ckb" %}تکایە هەموو خانەکان پڕبکەرەوە{% else %}Please fill in all fields{% endif %}');
-            }
-        });
+            // Form submission handling
+            loginForm.addEventListener('submit', function(e) {
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value;
 
-        // Auto-hide flash messages
-        setTimeout(function() {
-            const flashMessages = document.querySelectorAll('.flash-message');
-            flashMessages.forEach(function(message) {
-                message.style.opacity = '0';
-                message.style.transform = 'translateY(-20px)';
-                setTimeout(function() {
-                    message.remove();
-                }, 300);
+                if (!username || !password) {
+                    e.preventDefault();
+                    showError('{{ t.login_required if t.login_required else "Please fill in all fields" }}');
+                    return;
+                }
+
+                // Show loading state
+                loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ t.login }}';
+                loginForm.classList.add('loading');
             });
-        }, 5000);
+
+            // Enter key handling
+            [usernameInput, passwordInput].forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        if (input === usernameInput) {
+                            passwordInput.focus();
+                        } else {
+                            loginForm.submit();
+                        }
+                    }
+                });
+            });
+
+            function showError(message) {
+                // Remove existing error messages
+                const existingErrors = document.querySelectorAll('.flash-message.error');
+                existingErrors.forEach(error => error.remove());
+
+                // Create new error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'flash-message error';
+                errorDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>${message}</span>
+                `;
+
+                // Insert before form
+                const flashContainer = document.querySelector('.flash-messages') || createFlashContainer();
+                flashContainer.appendChild(errorDiv);
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    errorDiv.style.opacity = '0';
+                    errorDiv.style.transform = 'translateY(-20px)';
+                    setTimeout(() => errorDiv.remove(), 300);
+                }, 5000);
+            }
+
+            function createFlashContainer() {
+                const container = document.createElement('div');
+                container.className = 'flash-messages';
+                loginForm.parentNode.insertBefore(container, loginForm);
+                return container;
+            }
+
+            // Auto-hide existing flash messages
+            setTimeout(function() {
+                const flashMessages = document.querySelectorAll('.flash-message');
+                flashMessages.forEach(function(message) {
+                    message.style.transition = 'all 0.3s ease';
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-20px)';
+                    setTimeout(function() {
+                        if (message.parentNode) {
+                            message.remove();
+                        }
+                    }, 300);
+                });
+            }, 5000);
+        });
     </script>
 </body>
 </html>

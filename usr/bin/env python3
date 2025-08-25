@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""
+Database initialization script for Biology Study System
+Run this script after setting up your Flask app to create initial data
+"""
+
+from app import app, db, User, Chapter, Slide
+from werkzeug.security import generate_password_hash
+
+def init_database():
+    """Initialize database with sample data"""
+    with app.app_context():
+        # Create all tables
+        db.create_all()
+
+        print("Creating database tables...")
+
+        # Create admin user if doesn't exist
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(
+                username='admin',
+                email='admin@biology.local',
+                role='super_admin'
+            )
+            admin.set_password('admin123')
+            db.session.add(admin)
+            print("Created admin user (username: admin, password: admin123)")
+
+        # Create sample chapters
+        if Chapter.query.count() == 0:
+            chapters_data = [
+                {
+                    'title_en': 'Histology',
+                    'title_ckb': 'هیستۆلۆجی',
+                    'description_en': 'Study of tissues, epithelial structures, and microscopic anatomy.',
+                    'description_ckb': 'خوێندنی شانەکان، پێکهاتە ئەپیتێلیەکان و ئەناتۆمی مایکرۆسکۆپی.',
+                    'icon': 'fas fa-microscope'
+                },
+                {
+                    'title_en': 'Embryology',
+                    'title_ckb': 'ئێمبرۆلۆجی',
+                    'description_en': 'Developmental biology from fertilization through embryonic stages.',
+                    'description_ckb': 'بایۆلۆجی گەشەپێدان لە کتنییەوە بەنێو قۆناغەکانی ئێمبرۆ.',
+                    'icon': 'fas fa-baby'
+                },
+                {
+                    'title_en': 'Plant Anatomy',
+                    'title_ckb': 'ئەناتۆمیای ڕووەک',
+                    'description_en': 'Plant organs, root systems, stems, leaves and their functions.',
+                    'description_ckb': 'ئەندامەکانی ڕووەک، سیستەمی ڕەگ، شەق و گەڵا و کارەکانیان.',
+                    'icon': 'fas fa-leaf'
+                },
+                {
+                    'title_en': 'Parasitology',
+                    'title_ckb': 'پاراسیتۆلۆجی',
+                    'description_en': 'Parasitic organisms and their relationships with host species.',
+                    'description_ckb': 'زیندەوەرە گیرۆکەکان و پەیوەندییان بە جۆرە میوان.',
+                    'icon': 'fas fa-bug'
+                },
+                {
+                    'title_en': 'Hematology',
+                    'title_ckb': 'هیماتۆلۆجی',
+                    'description_en': 'Blood cells, hematological disorders, and diagnostic techniques.',
+                    'description_ckb': 'خانەکانی خوێن، نەخۆشی خوێن و تەکنیکەکانی دەستنیشانکردن.',
+                    'icon': 'fas fa-tint'
+                },
+                {
+                    'title_en': 'Microbiology',
+                    'title_ckb': 'مایکرۆبایۆلۆجی',
+                    'description_en': 'Bacteria, viruses, fungi and other microscopic life forms.',
+                    'description_ckb': 'بەکتریا، ڤایرۆس، کەمترشی و شێوەکانی دیکەی ژیانی مایکرۆسکۆپی.',
+                    'icon': 'fas fa-virus'
+                },
+                {
+                    'title_en': 'Entomology',
+                    'title_ckb': 'ئینتۆمۆلۆجی',
+                    'description_en': 'Insect anatomy, classification, and ecological importance.',
+                    'description_ckb': 'ئەناتۆمی مێروو، پۆلێنکردن و گرنگی ژینگەیی.',
+                    'icon': 'fas fa-spider'
+                },
+                {
+                    'title_en': 'Algae Studies',
+                    'title_ckb': 'خوێندنی ئاڵگا',
+                    'description_en': 'Algal diversity, classification, and environmental significance.',
+                    'description_ckb': 'جۆراوجۆری ئاڵگا، پۆلێنکردن و گرنگی ژینگەیی.',
+                    'icon': 'fas fa-water'
+                }
+            ]
+
+            for i, chapter_data in enumerate(chapters_data, 1):
+                chapter = Chapter(
+                    title_en=chapter_data['title_en'],
+                    title_ckb=chapter_data['title_ckb'],
+                    description_en=chapter_data['description_en'],
+                    description_ckb=chapter_data['description_ckb'],
+                    icon=chapter_data['icon'],
+                    order=i
+                )
+                db.session.add(chapter)
+
+            print(f"Created {len(chapters_data)} biology chapters")
+
+        # Create sample slide for demonstration
+        if Slide.query.count() == 0:
+            histology = Chapter.query.filter_by(title_en='Histology').first()
+            if histology:
+                sample_slide = Slide(
+                    title_en='Epithelial Tissue Structure',
+                    title_ckb='پێکهاتەی شانی ئەپیتێلی',
+                    content_en='Epithelial tissues form protective barriers and are involved in absorption, secretion, and sensation. They are characterized by closely packed cells with minimal extracellular matrix.',
+                    content_ckb='شانە ئەپیتێلیەکان بەربەستی پارێزەر دروست دەکەن و لە هەڵمژین، ترشەکردن و هەست کردن تێکەڵن. تایبەتمەندییان خانە لکێنراوەکانە بە کەمترین مادەی دەرەکی.',
+                    chapter_id=histology.id,
+                    order=1,
+                    image_url='https://example.com/epithelial-tissue.jpg'
+                )
+                db.session.add(sample_slide)
+                print("Created sample slide for demonstration")
+
+        # Commit all changes
+        db.session.commit()
+        print("\n✅ Database initialized successfully!")
+        print("\nYou can now:")
+        print("1. Run 'python app.py' to start the server")
+        print("2. Visit http://localhost:5000 to see the homepage")
+        print("3. Login at http://localhost:5000/en/admin/login with admin/admin123")
+        print("4. Create study materials at http://localhost:5000/en/add_slide")
+
+if __name__ == '__main__':
+    init_database()
